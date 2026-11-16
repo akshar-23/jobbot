@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+
+# Scraper output (regenerated every run)
+scraping/log.txt
+
+# jobbot local data: per-application drafts, screenshots and logs (personal data),
+# and the link-check cache
+applications/
+.jobbot/
+jobbot/*.log
+tracker.csv.tmp
+
+# Claude Code session-local settings (the shared /setup skill is kept)
+.claude/*
+!.claude/skills/
+
+# Word lock files (open-document temp files)
+~$*.docx
+~$*.doc
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

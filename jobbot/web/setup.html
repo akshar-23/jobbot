@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobbot setup</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e4e3df;
+    --accent: #2f5bd3; --accent-ink: #ffffff; --good: #1f7a4d; --warn: #9a5b00; --bad: #b3261e; --chip: #efeee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --panel: #1f1f1d; --text: #ecebe7; --muted: #a09f99; --line: #33322f;
+            --accent: #7c9cff; --accent-ink: #10131c; --good: #5cc28f; --warn: #e0a54a; --bad: #f2827a; --chip: #2a2a27; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 18px 24px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 20px; }
+  h2 { margin: 0 0 4px; font-size: 17px; }
+  a { color: var(--accent); }
+  .muted { color: var(--muted); }
+  .layout { display: grid; grid-template-columns: 210px 1fr; gap: 18px; padding: 0 24px 90px; max-width: 1100px; }
+  nav.steps { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 12px; align-self: start; }
+  nav.steps button { text-align: left; font: inherit; border: 0; background: none; color: var(--muted); padding: 7px 10px; border-radius: 7px; cursor: pointer; }
+  nav.steps button.on { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+  nav.steps button .n { display: inline-block; width: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .intro { color: var(--muted); margin: 0 0 14px; max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 16px; }
+  .f { display: flex; flex-direction: column; gap: 4px; }
+  .f.wide { grid-column: 1 / -1; }
+  .f label { font-weight: 600; font-size: 13px; }
+  .f .hint { color: var(--muted); font-size: 12px; }
+  input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; width: 100%; }
+  textarea { min-height: 90px; resize: vertical; }
+  textarea.big { min-height: 420px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+  textarea.mid { min-height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+  button.act { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.ai { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .msg { min-height: 1.4em; color: var(--muted); }
+  .msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
+  details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  .chip { display: inline-block; background: var(--chip); border-radius: 6px; padding: 0 6px; font-size: 12px; margin: 1px 4px 1px 0; }
+  .warn { color: var(--warn); }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 10px 24px; display: flex; gap: 8px; align-items: center; }
+  .bar .msg { flex: 1; }
+  ol.next li { margin-bottom: 10px; }
+  code { background: var(--chip); padding: 1px 5px; border-radius: 5px; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; padding: 0 16px 110px; } nav.steps { position: static; flex-direction: row; flex-wrap: wrap; } header { padding: 14px 16px 8px; } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Set up your job search</h1><div class="muted">Everything here stays on this computer, in the <code>profile</code> folder.</div></div>
+  <a href="/" id="dashLink">Go to the dashboard →</a>
+</header>
+<div class="layout">
+  <nav class="steps" id="steps"></nav>
+  <main id="main"></main>
+</div>
+<div class="bar">
+  <button class="act" type="button" id="back">Back</button>
+  <button class="act" type="button" id="next">Next</button>
+  <span class="msg" id="barMsg"></span>
+  <button class="act primary" type="button" id="save">Save</button>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATES = "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split(" ");
+let data = null;           // the profile being edited: {answers, search, bot, facts, companies}
+let step = 0;
+let suggestions = [];      // companies Claude suggested, with the boards found
+
+async function api(path, body) {
+  const opts = body ? { method: "POST", headers: { "Content-Type": "application/json", "X-Jobbot": "1" }, body: JSON.stringify(body) } : {};
+  const res = await fetch(path, opts);
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(out.error || res.statusText);
+  return out;
+}
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else if (k === "html") n.innerHTML = v;
+    else if (k.startsWith("on")) n[k] = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
+}
+function get(path) { return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), data); }
+function set(path, value) {
+  const keys = path.split("."); let o = data;
+  for (const k of keys.slice(0, -1)) o = o[k] = (o[k] && typeof o[k] === "object") ? o[k] : {};
+  o[keys.at(-1)] = value;
+}
+
+// ---- one form field, bound to a path in `data` ------------------------------------------
+// types: text, area, big, int, bool, tri ("" = ask me), state, list (comma), lines, strlist, locs, select:a|b
+function field(path, label, type = "text", hint = "", opts = {}) {
+  const v = get(path);
+  let input;
+  if (type === "bool" || type === "tri") {
+    input = el("select");
+    const choices = type === "tri" ? [["", "Ask me each time"], ["true", "Yes"], ["false", "No"]] : [["true", "Yes"], ["false", "No"]];
+    for (const [val, text] of choices) input.append(el("option", { value: val, text }));
+    input.value = v === true ? "true" : v === false ? "false" : (type === "tri" ? "" : "false");
+    input.onchange = () => set(path, input.value === "" ? "" : input.value === "true");
+  } else if (type === "state") {
+    input = el("select", {}, el("option", { value: "", text: "—" }));
+    for (const s of STATES) input.append(el("option", { value: s, text: s }));
+    input.value = v || "";
+    input.onchange = () => set(path, input.value);
+  } else if (type.startsWith("select:")) {
+    input = el("select");
+    for (const o of type.slice(7).split("|")) input.append(el("option", { value: o, text: o }));
+    input.value = v == null ? "" : String(v);
+    input.onchange = () => set(path, /^\d+$/.test(input.value) ? Number(input.value) : input.value);
+  } else if (["area", "big", "lines", "locs", "mid"].includes(type)) {
+    input = el("textarea", { class: type === "big" ? "big" : (type === "lines" || type === "locs" || type === "mid") ? "mid" : "" });
+    input.value = type === "lines" ? (v || []).join("\n") : type === "locs" ? (v || []).map((l) => `${l.name} = ${l.match}`).join("\n") : (v || "");
+    input.oninput = () => set(path, type === "lines" ? input.value.split("\n").map((s) => s.trim()).filter(Boolean)
+      : type === "locs" ? input.value.split("\n").map((l) => l.split(" = ")).filter((p) => p.length >= 2 && p[0].trim())
+                            .map((p) => ({ name: p[0].trim(), match: p.slice(1).join(" = ").trim() }))
+      : input.value);
+  } else {
+    input = el("input", { type: type === "int" ? "number" : "text" });
+    input.value = Array.isArray(v) ? v.join(", ") : (v == null ? "" : String(v));
+    input.oninput = () => {
+      const t = input.value.trim();
+      if (type === "int") set(path, t === "" ? 0 : Number(t));
+      else if (type === "list") set(path, t ? t.split(",").map((s) => s.trim()).filter(Boolean) : []);
+      else if (type === "strlist") set(path, t.includes(",") ? t.split(",").map((s) => s.trim()).filter(Boolean) : t);
+      else set(path, input.value);
+    };
+  }
+  if (opts.placeholder) input.setAttribute("placeholder", opts.placeholder);
+  input.dataset.path = path;
+  const wide = ["area", "big", "lines", "locs", "mid"].includes(type) || opts.wide;
+  return el("div", { class: "f" + (wide ? " wide" : "") }, el("label", { text: label }), input, hint ? el("span", { class: "hint", text: hint }) : null);
+}
+const grid = (...kids) => el("div", { class: "grid" }, ...kids);
+const card = (...kids) => el("div", { class: "card" }, ...kids);
+
+// ---- steps -----------------------------------------------------------------------------
+const STEPS = [
+  { title: "You", render: () => [
+    el("h2", { text: "Your details" }),
+    el("p", { class: "intro", text: "Copied into application forms exactly as you write them. Leave anything you don't have blank." }),
+    card(grid(
+      field("answers.identity.first_name", "First name"), field("answers.identity.last_name", "Last name"),
+      field("answers.identity.preferred_name", "Preferred first name", "text", "What you'd like to be called"),
+      field("answers.identity.email", "Email"), field("answers.identity.phone", "Phone", "text", "With country code, e.g. +1 555 010 0123"),
+      field("answers.identity.city", "City"), field("answers.identity.state", "State", "state"),
+      field("answers.identity.postal_code", "ZIP code"),
+      field("answers.identity.location", "Where you're based, in words", "text", "e.g. Los Angeles, CA"),
+      field("answers.identity.form_city", "City for city-search boxes", "text", "A real city name (not a region)"),
+    )),
+    card(el("h2", { text: "Links" }), grid(
+      field("answers.links.linkedin", "LinkedIn"), field("answers.links.portfolio", "Portfolio / website"),
+      field("answers.links.reel", "Demo reel"), field("answers.links.artstation", "ArtStation"), field("answers.links.github", "GitHub"),
+    )),
+    card(el("h2", { text: "Mailing address (optional)" }),
+      el("p", { class: "intro", text: "Some forms (Workday) ask for a street address. Leave it blank and those fields are left for you to type." }),
+      grid(field("answers.address.line1", "Street address"), field("answers.address.line2", "Apt / unit"),
+           field("answers.address.city", "City of that address"))),
+  ]},
+  { title: "Resume & facts", render: renderResume },
+  { title: "Work authorization", render: () => [
+    el("h2", { text: "Work authorization" }),
+    el("p", { class: "intro", text: "Used only for the yes/no questions on forms, exactly as you set them. Claude never answers these." }),
+    card(grid(
+      field("answers.work_authorization.authorized_to_work_in_us", "Authorized to work in the US?", "bool"),
+      field("answers.work_authorization.requires_sponsorship", "Will you need visa sponsorship, now or later?", "bool"),
+      field("answers.work_authorization.current_status", "Current status", "text", "e.g. US citizen, Green card, F-1 OPT"),
+      field("answers.work_authorization.us_citizen", "US citizen?", "bool"),
+      field("answers.work_authorization.permanent_resident", "Green card holder?", "bool"),
+      field("answers.work_authorization.citizenship", "Country of citizenship"),
+      field("answers.work_authorization.opt_end_date", "OPT end date", "text", "YYYY-MM-DD (only if you're on OPT)"),
+      field("answers.work_authorization.stem_opt_eligible", "Eligible for STEM OPT?", "bool"),
+      field("answers.work_authorization.previous_visas", "Visas you held before", "list", "Comma-separated, e.g. H-4"),
+      field("answers.work_authorization.security_clearance", "Hold a US security clearance?", "bool"),
+    )),
+  ]},
+  { title: "Education & job", render: () => [
+    el("h2", { text: "Education and current job" }),
+    el("p", { class: "intro", text: "Filled in from your resume if you used the Claude button; check them." }),
+    card(grid(
+      field("answers.education.school", "School"), field("answers.education.degree", "Degree", "text", "Written out, e.g. Bachelor of Fine Arts"),
+      field("answers.education.major", "Major"), field("answers.education.related_majors", "Related majors", "list", "Tried when a form's list lacks yours"),
+      field("answers.education.graduation", "Graduation", "text", "YYYY-MM"), field("answers.education.gpa", "GPA", "text", "Leave blank to skip"),
+    ), el("details", {}, el("summary", { text: "Another degree" }), grid(
+      field("answers.education.undergrad_school", "School"), field("answers.education.undergrad_degree", "Degree"),
+      field("answers.education.undergrad_major", "Major"), field("answers.education.undergrad_graduation", "Graduation", "text", "YYYY-MM"),
+      field("answers.education.undergrad_gpa", "GPA")))),
+    card(el("h2", { text: "Current job" }), grid(
+      field("answers.current_job.company", "Company", "text", "Blank if none"), field("answers.current_job.title", "Title"),
+      field("answers.current_job.start_date", "Started", "text", "YYYY-MM"))),
+  ]},
+  { title: "What you're looking for", render: renderSearch },
+  { title: "Companies", render: renderCompanies },
+  { title: "Standard answers", render: () => [
+    el("h2", { text: "Standard answers" }),
+    el("p", { class: "intro", text: "Questions most forms ask. Demographic questions are always optional; write the meaning (\"No\", \"Decline to self-identify\") and jobbot finds each form's wording." }),
+    card(el("h2", { text: "Voluntary disclosures" }), grid(
+      field("answers.voluntary_disclosures.gender", "Gender", "text", "e.g. Female, Male, Non-binary, Decline to self-identify"),
+      field("answers.voluntary_disclosures.race_ethnicity", "Race / ethnicity", "strlist", "One, or several from most to least specific: South Asian, Asian"),
+      field("answers.voluntary_disclosures.hispanic_latino", "Hispanic or Latino?", "text", "Yes / No / Decline to self-identify"),
+      field("answers.voluntary_disclosures.veteran_status", "Veteran?", "text", "Yes / No / Decline to self-identify"),
+      field("answers.voluntary_disclosures.disability_status", "Disability?", "text", "Yes / No / Decline to self-identify"),
+      field("answers.voluntary_disclosures.pronouns", "Pronouns", "text", "Blank = skip the question"),
+    )),
+    card(el("h2", { text: "Other common questions" }), grid(
+      field("answers.preferences.earliest_start", "When can you start?", "text", "e.g. Two weeks after an offer"),
+      field("answers.misc.how_did_you_hear", "How did you hear about us?", "text", "Default answer"),
+      field("answers.misc.spoken_languages", "Languages you speak", "list", "Comma-separated"),
+      field("answers.misc.previously_interviewed_at", "Companies you've interviewed with before", "list", "Comma-separated"),
+      field("answers.misc.relatives_at_companies", "Companies where a relative works", "list", "Comma-separated; blank = none"),
+      field("answers.misc.government_employee", "Worked for a government recently?", "tri"),
+      field("answers.misc.needs_accommodation", "Need an accommodation to apply?", "tri"),
+      field("answers.misc.can_perform_essential_functions", "Able to perform the job's essential functions?", "tri"),
+      field("answers.misc.marketing_opt_in", "Opt in to marketing texts / newsletters?", "bool"),
+    )),
+    card(el("h2", { text: "Agreements and privacy" }), grid(
+      field("bot.accept_privacy_notices", "Accept \"I've read the privacy notice\" checkboxes for me?", "bool"),
+      field("bot.accept_arbitration_agreements", "Accept arbitration agreements for me?", "bool", "Gives up your right to sue in court; most people say No"),
+      field("bot.forbidden_terms", "Words that must never appear in your letters", "list", "e.g. a project under NDA"),
+    )),
+  ]},
+  { title: "Save", render: renderFinish },
+];
+
+function renderResume() {
+  const msg = el("div", { class: "msg", id: "stepMsg" });
+  const file = el("input", { type: "file", accept: "application/pdf,.pdf" });
+  const path = el("span", { class: "muted", text: get("answers.documents.resume_pdf") ? `Current: ${get("answers.documents.resume_pdf")}` : "No resume yet." });
+  const upload = el("button", { class: "act", type: "button", text: "Upload" });
+  upload.onclick = async () => {
+    const f = file.files[0];
+    if (!f) { msg.className = "msg err"; msg.textContent = "Choose your resume PDF first."; return; }
+    const buf = new Uint8Array(await f.arrayBuffer());
+    let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    try {
+      const r = await api("/api/profile/resume", { data: btoa(bin), first_name: get("answers.identity.first_name") || "", last_name: get("answers.identity.last_name") || "" });
+      set("answers.documents.resume_pdf", r.path); path.textContent = `Saved as ${r.path}`;
+      msg.className = "msg ok"; msg.textContent = "Uploaded. Now let Claude read it.";
+    } catch (e) { msg.className = "msg err"; msg.textContent = e.message; }
+  };
+  const read = el("button", { class: "act ai", type: "button", text: "Read my resume with Claude" });
+  read.onclick = () => withBusy(read, msg, "Claude is reading your resume (about 30 seconds)…", async () => {
+    if (!get("answers.documents.resume_pdf")) throw new Error("Upload your resume first.");
+    const out = await api("/api/profile/ai/resume", { path: get("answers.documents.resume_pdf") });
+    const facts = get("facts") || "";
+    if (!facts.trim() || confirm("Replace your facts with Claude's new draft?")) set("facts", out.facts_md);
+    for (const section of ["identity", "links", "education", "current_job"]) {
+      for (const [k, v] of Object.entries(out[section] || {})) {
+        const p = `answers.${section}.${k}`;
+        if (v && !get(p)) set(p, v);           // never overwrite something you typed
+      }
+    }
+    if (!get("answers.identity.preferred_name")) set("answers.identity.preferred_name", get("answers.identity.first_name") || "");
+    if (!get("answers.identity.form_city")) set("answers.identity.form_city", get("answers.identity.city") || "");
+    if (!get("answers.identity.location") && get("answers.identity.city"))
+      set("answers.identity.location", `${get("answers.identity.city")}, ${get("answers.identity.state") || ""}`.replace(/, $/, ""));
+    render();
+    return "Done. Read the facts below and fix anything that's wrong, then check the other steps.";
+  });
+  return [
+    el("h2", { text: "Resume and facts" }),
+    el("p", { class: "intro", text: "Your resume is attached to applications. Claude turns it into your facts: the only things it may say about you in cover letters and answers. Anything not in the facts, it won't claim." }),
+    card(el("div", { class: "row" }, file, upload, read), path, msg),
+    card(field("facts", "Your facts", "big", "Edit freely. Add rules too, e.g. projects under NDA that must never be named. Fill in the work authorization section yourself.")),
+  ];
+}
+
+function renderSearch() {
+  const msg = el("div", { class: "msg", id: "stepMsg" });
+  const btn = el("button", { class: "act ai", type: "button", text: "Turn this into search rules with Claude" });
+  btn.onclick = () => withBusy(btn, msg, "Claude is writing your search rules (about a minute)…", async () => {
+    if (!(get("facts") || "").trim()) throw new Error("Fill in your facts first (the Resume step).");
+    const s = await api("/api/profile/ai/search", { facts: get("facts"), goal: get("search.target.goal") || "",
+      cities: get("answers.preferences.preferred_locations") || [], needs_sponsorship: !!get("answers.work_authorization.requires_sponsorship") });
+    for (const k of ["include", "not_target", "outside_background", "other_tracks"]) set(`search.titles.${k}`, s[k] || []);
+    for (const k of ["level_nouns", "max_level", "max_years_required", "drop_contract_roles", "drop_apprenticeships"]) set(`search.target.${k}`, s[k]);
+    set("search.sources.simplify_new_grad", !!s.simplify_new_grad); set("search.sources.simplify_categories", s.simplify_categories || []);
+    set("search.locations", s.locations || []); set("search.fit.guide", s.fit_guide || "");
+    render();
+    return "Done. The rules are under \"Search rules\" below; check them, especially the fit guide.";
+  });
+  return [
+    el("h2", { text: "What you're looking for" }),
+    el("p", { class: "intro", text: "Say it in your own words; Claude turns it into title filters and a guide for judging each posting against your facts." }),
+    card(grid(
+      field("search.target.goal", "The jobs you want", "area", "e.g. Junior 3D or 2D character animator at animation, VFX or game studios. Contract work is fine."),
+      field("answers.preferences.preferred_locations", "Cities, best first", "lines", "One per line, e.g. Los Angeles"),
+      field("search.target.max_level", "Highest level", "select:1|2|3", "1 = new grad / junior / level I"),
+      field("search.target.max_years_required", "Most years of experience a posting may ask", "int"),
+      field("answers.preferences.salary_floor", "Lowest salary you'd take ($/year)", "int", "Listings below this are hidden"),
+      field("answers.preferences.salary_target", "Target salary ($/year)", "int", "Also your answer to \"desired salary\""),
+      field("answers.preferences.willing_to_relocate", "Willing to relocate?", "bool"),
+      field("answers.preferences.open_to_remote", "Open to remote?", "bool"),
+      field("answers.preferences.prefers_remote", "Prefer remote when it's offered?", "bool"),
+      field("answers.preferences.open_to_onsite", "OK with in-office / hybrid?", "bool"),
+    ), el("div", { class: "row", style: "margin-top:12px" }, btn), msg),
+    card(el("details", {}, el("summary", { text: "Search rules (written by Claude; edit if you like)" }), grid(
+      field("search.titles.include", "A title must contain one of", "lines", "Patterns, one per line (regular expressions, whole words, any case)"),
+      field("search.titles.not_target", "Drop titles with (other jobs)", "lines"),
+      field("search.titles.outside_background", "Drop titles with (specialties you lack)", "lines"),
+      field("search.titles.other_tracks", "Drop titles with (anything else)", "lines"),
+      field("search.target.level_nouns", "Words a level number follows", "list", "e.g. animator, artist"),
+      field("search.target.drop_contract_roles", "Skip contract roles?", "bool"),
+      field("search.target.drop_apprenticeships", "Skip apprenticeships?", "bool"),
+      field("search.sources.simplify_new_grad", "Also use the SimplifyJobs new-grad list? (tech jobs only)", "bool"),
+      field("search.locations", "Location matching (Name = pattern)", "locs"),
+      field("search.fit.guide", "Fit guide (how Claude judges each posting)", "mid"),
+    ))),
+  ];
+}
+
+const PROVIDERS = { greenhouse: /greenhouse\.io\/(?:embed\/job_board\?for=)?([\w-]+)/i, lever: /jobs\.lever\.co\/([\w-]+)/i,
+  ashby: /jobs\.ashbyhq\.com\/([\w.-]+)/i, workable: /apply\.workable\.com\/([\w-]+)/i, smartrecruiters: /smartrecruiters\.com\/([\w-]+)/i };
+
+function renderCompanies() {
+  const list = data.companies || (data.companies = []);
+  const msg = el("div", { class: "msg", id: "stepMsg" });
+  const table = el("tbody");
+  const draw = () => {
+    table.replaceChildren();
+    if (!list.length) table.append(el("tr", {}, el("td", { colspan: "4", class: "muted", text: "No companies yet." })));
+    list.forEach((c, i) => {
+      const del = el("button", { class: "act", type: "button", text: "Remove", onclick: () => { list.splice(i, 1); draw(); } });
+      table.append(el("tr", {}, el("td", { text: c.company }), el("td", { text: c.ats_provider }),
+        el("td", { class: "muted", text: c.ats_slug || c.career_url || "" }), el("td", {}, del)));
+    });
+  };
+  const add = (entry) => { if (!list.some((c) => c.company === entry.company && c.ats_provider === entry.ats_provider)) list.push(entry); };
+
+  const sugBox = el("div");
+  const drawSuggestions = () => {
+    sugBox.replaceChildren();
+    if (!suggestions.length) return;
+    const rows = el("tbody");
+    for (const s of suggestions) {
+      const b = (s.boards || [])[0];
+      const box = el("input", { type: "checkbox" });
+      box.checked = !!(b && b.sure); box.disabled = !b;
+      s._box = box;
+      rows.append(el("tr", {}, el("td", {}, box), el("td", {}, el("b", { text: s.company }), el("div", { class: "muted", text: s.why || "" })),
+        el("td", {}, b ? el("span", {}, el("span", { class: "chip", text: `${b.ats_provider} · ${b.open_jobs} open` }),
+          b.sure ? null : el("span", { class: "warn", text: " check it's the right company: " }),
+          el("a", { href: b.board_url, target: "_blank", rel: "noopener", text: "board" }))
+          : el("span", { class: "muted", text: "No public board (often Workday): paste its careers link below" }))));
+    }
+    const take = el("button", { class: "act primary", type: "button", text: "Add the ticked companies" });
+    take.onclick = () => {
+      for (const s of suggestions) if (s._box.checked) { const b = s.boards[0]; add({ company: s.company, ats_provider: b.ats_provider, ats_slug: b.ats_slug, group: "suggested" }); }
+      suggestions = []; drawSuggestions(); draw();
+    };
+    sugBox.append(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}), el("th", { text: "Company" }), el("th", { text: "Job board" }))), rows),
+                  el("div", { class: "row", style: "margin-top:8px" }, take));
+  };
+  const suggest = el("button", { class: "act ai", type: "button", text: "Suggest companies with Claude" });
+  suggest.onclick = () => withBusy(suggest, msg, "Claude is listing employers and checking their job boards (1–2 minutes)…", async () => {
+    if (!(get("facts") || "").trim()) throw new Error("Fill in your facts first (the Resume step).");
+    const r = await api("/api/profile/ai/companies", { facts: get("facts"), goal: get("search.target.goal") || "",
+      cities: get("answers.preferences.preferred_locations") || [], needs_sponsorship: !!get("answers.work_authorization.requires_sponsorship") });
+    suggestions = r.companies || []; drawSuggestions();
+    return `${suggestions.filter((s) => (s.boards || []).length).length} of ${suggestions.length} have a public job board. Tick the ones you want.`;
+  });
+
+  const nameIn = el("input", { type: "text", placeholder: "Company name, e.g. Riot Games" });
+  const byName = el("button", { class: "act", type: "button", text: "Find its job board" });
+  byName.onclick = () => withBusy(byName, msg, "Looking…", async () => {
+    const name = nameIn.value.trim(); if (!name) throw new Error("Type a company name.");
+    const r = await api("/api/profile/board", { name });
+    if (!r.boards.length) return `No public board found for ${name}. Paste its careers link instead.`;
+    const b = r.boards[0]; add({ company: name, ats_provider: b.ats_provider, ats_slug: b.ats_slug, group: "added" }); draw(); nameIn.value = "";
+    return `Added ${name} (${b.ats_provider}, ${b.open_jobs} open)` + (b.sure ? "." : `: check it's the right company: ${b.board_url}`);
+  });
+  const linkName = el("input", { type: "text", placeholder: "Company name" });
+  const linkIn = el("input", { type: "text", placeholder: "Careers link, e.g. https://disney.wd5.myworkdayjobs.com/disneycareer" });
+  const byLink = el("button", { class: "act", type: "button", text: "Add" });
+  byLink.onclick = () => {
+    const url = linkIn.value.trim(), name = linkName.value.trim();
+    msg.className = "msg";
+    if (!name || !/^https?:\/\//i.test(url)) { msg.className = "msg err"; msg.textContent = "Give the company name and a full https:// link."; return; }
+    if (/myworkdayjobs\.com/i.test(url)) add({ company: name, ats_provider: "workday", career_url: url.split("?")[0].replace(/\/job\/.*$/, ""), group: "added" });
+    else {
+      const hit = Object.entries(PROVIDERS).map(([p, rx]) => [p, url.match(rx)]).find(([, m]) => m);
+      if (!hit) { msg.className = "msg err"; msg.textContent = "jobbot can read Workday, Greenhouse, Lever, Ashby, Workable and SmartRecruiters boards. That link is a company's own site; use the browser helper for those jobs."; return; }
+      add({ company: name, ats_provider: hit[0], ats_slug: hit[1][1], group: "added" });
+    }
+    linkIn.value = linkName.value = ""; draw(); msg.textContent = `Added ${name}.`;
+  };
+  draw(); drawSuggestions();
+  return [
+    el("h2", { text: "Companies to watch" }),
+    el("p", { class: "intro", text: "Every night jobbot checks these companies' job boards for new postings that pass your filters. Aim for 15–40 companies." }),
+    card(el("div", { class: "row" }, suggest), msg, sugBox),
+    card(el("h2", { text: "Add one yourself" }), el("div", { class: "row" }, nameIn, byName),
+      el("div", { class: "row", style: "margin-top:8px" }, linkName, linkIn, byLink)),
+    card(el("h2", { text: `Your companies` }), el("table", {}, el("thead", {}, el("tr", {}, el("th", { text: "Company" }), el("th", { text: "Board" }), el("th", { text: "Name / link" }), el("th", {}))), table)),
+  ];
+}
+
+function renderFinish() {
+  const problems = [];
+  if (!get("answers.identity.first_name") || !get("answers.identity.email")) problems.push("Your name and email (step 1).");
+  if (!get("answers.documents.resume_pdf")) problems.push("Your resume PDF (step 2).");
+  if (!(get("facts") || "").trim()) problems.push("Your facts (step 2).");
+  if (!(get("search.titles.include") || []).length) problems.push("Search rules: use the Claude button in step 5.");
+  if (!(data.companies || []).length && !get("search.sources.simplify_new_grad")) problems.push("At least a few companies (step 6).");
+  return [
+    el("h2", { text: "Save" }),
+    problems.length ? card(el("b", { class: "warn", text: "Still missing:" }), el("ul", {}, ...problems.map((p) => el("li", { text: p }))),
+      el("div", { class: "muted", text: "You can save now and come back; nothing is sent anywhere." })) : card(el("b", { class: "msg ok", text: "Everything's filled in." })),
+    card(el("p", { text: "Click Save (bottom right). Then:" }), el("ol", { class: "next" },
+      el("li", { html: "<b>Find jobs.</b> On GitHub, open your copy of this project → <b>Actions</b> → <b>Nightly scrape</b> → <b>Run workflow</b> (the first time, click “I understand… enable workflows”). After that it runs every night by itself. Start jobbot again (the Start file) to pull in what it found." }),
+      el("li", { html: "<b>Pick roles</b> on the dashboard's To review tab. Each role shows a fit verdict from Claude; picked roles go to To apply, and the bot fills the Greenhouse, Ashby and Lever ones." }),
+      el("li", { html: "<b>Install the browser helper</b> for Workday and other sites: open <code>chrome://extensions</code> (or <code>edge://extensions</code>), turn on Developer mode, click <b>Load unpacked</b> and choose the <code>extension</code> folder in this project. On an application page, press <b>Alt+J</b>." }),
+      el("li", { html: "<b>Let the bot submit</b> only after you've checked a few dry runs: on the To apply tab, tick the sites it may submit on." }),
+    )),
+  ];
+}
+
+// The step may redraw while Claude works, so results go to whatever message line is on screen now.
+async function withBusy(btn, msg, busyText, fn) {
+  btn.disabled = true; msg.className = "msg"; msg.textContent = busyText;
+  const show = (cls, text) => { const m = $("stepMsg") || msg; m.className = "msg " + cls; m.textContent = text; };
+  try { show("ok", (await fn()) || "Done."); }
+  catch (e) { show("err", e.message); }
+  finally { btn.disabled = false; }
+}
+
+function render() {
+  const nav = $("steps"); nav.replaceChildren();
+  STEPS.forEach((s, i) => nav.append(el("button", { class: i === step ? "on" : "", type: "button", onclick: () => { step = i; render(); window.scrollTo(0, 0); } },
+    el("span", { class: "n", text: String(i + 1) }), s.title)));
+  const main = $("main"); main.replaceChildren(...STEPS[step].render());
+  $("back").disabled = step === 0; $("next").disabled = step === STEPS.length - 1;
+}
+$("back").onclick = () => { step = Math.max(0, step - 1); render(); window.scrollTo(0, 0); };
+$("next").onclick = () => { step = Math.min(STEPS.length - 1, step + 1); render(); window.scrollTo(0, 0); };
+$("save").onclick = async () => {
+  const msg = $("barMsg"); msg.className = "msg"; msg.textContent = "Saving…";
+  try {
+    const r = await api("/api/profile", { answers: data.answers, search: data.search, bot: data.bot, facts: data.facts || "", companies: data.companies || [] });
+    msg.className = "msg ok"; msg.textContent = `Saved (${r.written.join(", ")}).`;
+    $("dashLink").textContent = "Go to the dashboard →";
+  } catch (e) { msg.className = "msg err"; msg.textContent = "Couldn't save: " + e.message; }
+};
+
+api("/api/profile").then((snap) => {
+  data = snap;
+  if (!snap.set_up) $("barMsg").textContent = "Welcome! Work through the steps; Save whenever you like.";
+  render();
+}).catch((e) => { $("main").textContent = "Couldn't load your profile: " + e.message; });
+</script>
+</body>
+</html>

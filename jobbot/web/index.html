@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobbot</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e4e3df;
+    --accent: #2f5bd3; --accent-ink: #ffffff; --good: #1f7a4d; --warn: #9a5b00; --bad: #b3261e;
+    --chip: #efeee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --panel: #1f1f1d; --text: #ecebe7; --muted: #a09f99; --line: #33322f;
+            --accent: #7c9cff; --accent-ink: #10131c; --good: #5cc28f; --warn: #e0a54a; --bad: #f2827a;
+            --chip: #2a2a27; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 18px 24px 0; }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding: 0 24px; overflow-x: auto; }
+  .tab { border: 0; background: none; color: var(--muted); padding: 10px 12px; cursor: pointer;
+         border-bottom: 2px solid transparent; font: inherit; white-space: nowrap; }
+  .tab.on { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .count { background: var(--chip); border-radius: 10px; padding: 1px 7px; margin-left: 4px; font-size: 12px; }
+  main { padding: 16px 24px 40px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type=text], input[type=url], select { font: inherit; color: var(--text); background: var(--bg);
+         border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; }
+  input[type=url] { flex: 1 1 320px; }
+  .grow { flex: 1 1 200px; }
+  button.act { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+         border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  details summary { cursor: pointer; color: var(--muted); margin-top: 8px; }
+  .msg { margin-top: 8px; color: var(--muted); min-height: 1em; }
+  .msg.err { color: var(--bad); }
+  .banner { border-left: 3px solid var(--accent); }
+  label.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+  .muted { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  tr.sel td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  td a { color: var(--accent); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+  .badge { display: inline-block; font-size: 12px; border-radius: 6px; padding: 1px 6px; background: var(--chip); margin: 0 4px 2px 0; }
+  .b-auto { color: var(--good); }
+  .b-manual { color: var(--muted); }
+  .b-warn { color: var(--warn); }
+  .b-bad { color: var(--bad); }
+  .tableWrap { overflow-x: auto; }
+  pre.log { background: var(--chip); border-radius: 8px; padding: 8px 10px; max-height: 240px; overflow: auto; font-size: 12px; white-space: pre-wrap; margin: 8px 0 0; }
+  .q { border-top: 1px solid var(--line); padding: 10px 0; }
+  .q:first-child { border-top: 0; }
+  .q .ans { margin-top: 6px; }
+  .q select, .q input[type=text], .q textarea { max-width: 100%; }
+  .q textarea { width: 100%; min-height: 60px; font: inherit; }
+  .warnbox { border-left: 3px solid var(--warn); padding-left: 10px; }
+  .codes { border: 2px solid var(--accent); }
+  dialog#resolveDlg { border: 1px solid var(--line); border-radius: 12px; padding: 0; width: min(680px, 94vw);
+    background: var(--panel); color: var(--text); }
+  dialog#resolveDlg::backdrop { background: rgba(0,0,0,.35); }
+  #resolveDlg .inner { padding: 16px 18px; max-height: 80vh; overflow: auto; }
+  #resolveDlg .item { border-top: 1px solid var(--line); padding: 10px 0; }
+  #resolveDlg .item:first-of-type { border-top: 0; }
+  #resolveDlg .q { font-weight: 600; margin-bottom: 4px; white-space: pre-wrap; }
+  #resolveDlg select, #resolveDlg input[type=text] { width: 100%; margin-top: 4px; }
+  button.answer { font: inherit; font-size: 12px; border: 1px solid var(--accent); color: var(--accent); background: none;
+    border-radius: 6px; padding: 1px 7px; margin: 0 4px 2px 0; cursor: pointer; }
+  .codes .code-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+  .codes .code-row:first-of-type { border-top: 0; }
+  .codes input { width: 11em; letter-spacing: .15em; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  @media (max-width: 720px) { header, main { padding-left: 16px; padding-right: 16px; } .tabs { padding: 0 16px; } .hide-sm { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>jobbot</h1>
+  <p class="sub" id="subtitle">Pick roles to apply to. Ranked by your location order, how recently they were posted, salary, new-grad signal and the fit check (your profile vs. the job description).</p>
+  <div class="row sub" style="margin-top:-6px">
+    <span id="checkStatus" class="muted"></span>
+    <button class="act" type="button" id="checkBtn">Check links now</button>
+    <span style="flex:1"></span>
+    <a href="/setup" class="act" style="text-decoration:none;color:var(--accent)">Profile &amp; setup</a>
+  </div>
+  <div class="row sub" style="margin-top:6px">
+    <span id="fitStatus" class="muted"></span>
+    <button class="act" type="button" id="fitBtn">Screen fit now</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<main>
+<section class="card codes" id="restartCard" hidden><b>jobbot was updated since you started it.</b>
+  Close the jobbot window (or press Ctrl+C in its Terminal) and start it again, then refresh this page; until then new features won't work.</section>
+<section class="card codes" id="codesCard" hidden></section>
+<div id="jobsView">
+  <section class="card">
+    <form id="addForm" class="row" autocomplete="off">
+      <input type="url" id="addUrl" placeholder="Paste a job link (company site, Greenhouse, Lever, Ashby, Workday…)" required>
+      <button class="act primary" type="submit" id="addBtn">Add to To apply</button>
+    </form>
+    <details><summary>Company, title or location didn't come through? Fill them in</summary>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="addCompany" class="grow" placeholder="Company">
+        <input type="text" id="addTitle" class="grow" placeholder="Role title">
+        <input type="text" id="addLocation" class="grow" placeholder="Location">
+      </div>
+    </details>
+    <div class="msg" id="addMsg"></div>
+  </section>
+
+  <section class="card banner" id="banner" hidden></section>
+
+  <section class="card" id="botCard" hidden>
+    <div class="row">
+      <b>Application bot</b>
+      <span id="botStatus" class="muted"></span>
+      <span style="flex:1"></span>
+      <label class="chk"><input type="checkbox" id="dryOnly"> Dry run only</label>
+      <button class="act" type="button" id="runSel" disabled>Run bot on selected</button>
+      <button class="act primary" type="button" id="runAll">Run bot on all</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted">Submit for real on:</span>
+      <span id="liveBoxes" class="row"></span>
+      <label class="chk"><input type="checkbox" id="autoRun"> Run automatically when I pick roles</label>
+      <label class="chk" title="Live runs open a visible browser window; when a site shows a CAPTCHA you solve it there and the bot finishes the application."><input type="checkbox" data-agree="solve_checks_myself"> Let me solve CAPTCHAs in the bot's window</label>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <span class="muted">Agree for me to:</span>
+      <label class="chk"><input type="checkbox" data-agree="accept_privacy_notices"> privacy notices</label>
+      <label class="chk"><input type="checkbox" data-agree="accept_other_agreements"> other terms and "I certify" statements</label>
+      <label class="chk"><input type="checkbox" data-agree="accept_arbitration_agreements"> arbitration agreements</label>
+    </div>
+    <div class="msg" id="botMsg"></div>
+    <details><summary>Bot output</summary><pre class="log" id="botLog">(no run yet)</pre></details>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <input type="text" id="q" class="grow" placeholder="Search company, role, location">
+      <select id="tier"><option value="">All locations</option></select>
+      <select id="fresh" aria-label="Posted within">
+        <option value="7">Posted ≤ 7 days</option><option value="14">Posted ≤ 14 days</option>
+        <option value="30" selected>Posted ≤ 30 days</option><option value="60">Posted ≤ 60 days</option>
+        <option value="">Any date</option>
+      </select>
+      <select id="fit" aria-label="Fit">
+        <option value="nopoor" selected>Hide poor fits</option>
+        <option value="good">Good fits only</option>
+        <option value="">Any fit</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="eligibleOnly" checked> Passes current filters</label>
+      <label class="chk"><input type="checkbox" id="autoOnly"> Auto-apply ready only</label>
+      <label class="chk"><input type="checkbox" id="hideLow" checked> Hide below salary floor</label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted" id="shown"></span>
+      <span class="muted" id="selCount"></span>
+      <span style="flex:1"></span>
+      <span id="actions" class="row"></span>
+    </div>
+  </section>
+
+  <div class="tableWrap">
+    <table>
+      <thead><tr>
+        <th style="width:28px"><input type="checkbox" id="selAll" aria-label="Select all shown"></th>
+        <th>Company</th><th>Role</th><th>Location</th><th class="hide-sm">Salary</th>
+        <th>Applies via</th><th class="hide-sm">Posted</th><th class="hide-sm">Notes</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="answersView" hidden>
+  <section class="card banner">
+    Questions jobbot couldn't answer on its own (from the bot's runs and the browser helper). Answer each once:
+    the bot and the helper reuse your answer whenever the question comes up again, at any company. An answer that
+    names a company is only used for that company. Questions about AI use, "applied here before" and agreements
+    always stay with you.
+  </section>
+  <section class="card">
+    <h2 style="margin:0 0 4px;font-size:15px">Waiting for your answer <span class="muted" id="pendingCount"></span></h2>
+    <div id="pendingList"></div>
+  </section>
+  <section class="card">
+    <h2 style="margin:0 0 8px;font-size:15px">Add one yourself</h2>
+    <form id="ownForm" class="row" autocomplete="off">
+      <input type="text" id="ownQ" class="grow" placeholder="Question, as forms ask it (e.g. Are you bound by a non-compete?)" required>
+      <input type="text" id="ownA" class="grow" placeholder="Your answer" required>
+      <button class="act" type="submit">Save</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2 style="margin:0 0 8px;font-size:15px">Saved answers <span class="muted" id="savedCount"></span></h2>
+    <div class="tableWrap"><table>
+      <thead><tr><th>Question</th><th>Your answer</th><th class="hide-sm">Used for</th><th></th></tr></thead>
+      <tbody id="savedRows"></tbody>
+    </table></div>
+  </section>
+</div>
+</main>
+<dialog id="resolveDlg"><div class="inner" id="resolveBody"></div></dialog>
+
+<script>
+const TABS = [
+  ["to_review", "To review"], ["to_apply", "To apply"], ["needs_manual", "Needs you"],
+  ["applied", "Applied"], ["done", "Skipped / closed"], ["answers", "Answers"],
+];
+const ACTIONS = {
+  to_review: [["to_apply", "Pick for applying", true], ["skipped", "Skip", false]],
+  to_apply: [["applied", "I applied myself", false], ["to_review", "Back to review", false], ["skipped", "Skip", false]],
+  needs_manual: [["applied", "Mark applied", true], ["to_review", "Back to review", false]],
+  done: [["to_review", "Back to review", false]],
+  applied: [],
+};
+const BANNERS = {
+  to_apply: "Roles you picked. Auto rows (Greenhouse, Ashby, Lever) are filled by the bot: a dry run fills the form and saves a screenshot; it clicks Submit only on the sites you tick below. Workday and company portals move to Needs you, where the browser helper (Alt+J) fills them for you to submit.",
+  needs_manual: "Applications for you to finish: sites that check a human is applying (Greenhouse's emailed code, Ashby's spam check, CAPTCHAs), Workday and company portals, or a question your facts file can't answer. Click \"open application form\" (or the job), press Alt+J: the helper fills it with the answers and cover letter the bot already prepared. Then click the site's Submit and \"Mark applied\" in the helper.",
+};
+const state = { tab: "to_review", jobs: [], selected: new Set(), counts: {}, answers: { saved: [], pending: [] } };
+const $ = (id) => document.getElementById(id);
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
+}
+const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : null;
+
+async function api(path, body) {
+  const opts = body ? { method: "POST", headers: { "Content-Type": "application/json", "X-Jobbot": "1" },
+                        body: JSON.stringify(body) } : {};
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function renderTabs() {
+  const nav = $("tabs"); nav.replaceChildren();
+  for (const [key, label] of TABS) {
+    const b = el("button", { class: "tab" + (state.tab === key ? " on" : ""), type: "button" }, label,
+                 el("span", { class: "count", text: String(state.counts[key] || 0) }));
+    b.onclick = () => { state.tab = key; state.selected.clear(); load(); };
+    nav.append(b);
+  }
+}
+
+function visible() {
+  const q = $("q").value.trim().toLowerCase(), tier = $("tier").value, fresh = $("fresh").value, fit = $("fit").value;
+  // Age and eligibility filters only make sense for roles still being decided on.
+  const open = state.tab === "to_review" || state.tab === "to_apply";
+  return state.jobs.filter((j) =>
+    (!q || `${j.company} ${j.title} ${j.location}`.toLowerCase().includes(q)) &&
+    (!tier || String(j.tier) === tier) &&
+    (!open || !fresh || j.age_days <= Number(fresh)) &&
+    (!open || !$("eligibleOnly").checked || j.eligible) &&
+    (!open || !fit || (fit === "good" ? j.fit === "good" : j.fit !== "poor")) &&
+    (!$("autoOnly").checked || j.auto) &&
+    (!$("hideLow").checked || !j.below_floor));
+}
+
+function ageText(j) {
+  if (!j.date_posted && !j.date_added) return "—";
+  const d = j.age_days === 0 ? "today" : `${j.age_days}d ago`;
+  return j.age_is_posted ? d : `seen ${d}`;
+}
+
+function noteBadges(notes) {
+  const out = [];
+  const n = (notes || "").toLowerCase();
+  if (n.includes("new-grad")) out.push(["new grad", "b-auto"]);
+  if (n.includes("years but also")) out.push(["asks for years", "b-warn"]);
+  if (n.includes("location unclear")) out.push(["location unclear", "b-warn"]);
+  if (n.includes("closed:")) out.push(["closed", "b-bad"]);
+  if (n.includes("src:simplify")) out.push(["Simplify list", "b-manual"]);
+  if (n.includes("src:manual")) out.push(["added by you", "b-manual"]);
+  if (n.includes("cover_letter:")) out.push(["cover letter", "b-auto"]);
+  // The bot's latest note: why it needs you, or where its dry-run screenshot is.
+  const bot = (notes || "").split(";").map((s) => s.trim()).find((s) => s.startsWith("bot:"));
+  if (bot) out.push([bot.slice(4).trim().slice(0, 140), bot.includes("needs you") || bot.includes("couldn't") || bot.includes("failed") ? "b-warn" : "b-auto"]);
+  return out.map(([t, c]) => el("span", { class: "badge " + c, text: t }));
+}
+
+const FIT_BADGE = { good: ["good fit", "b-auto"], stretch: ["stretch", "b-warn"], poor: ["poor fit", "b-bad"] };
+
+function rowBadges(j) {
+  const out = noteBadges(j.notes);
+  if (j.resolvable) {
+    const b = el("button", { class: "answer", type: "button", text: `Answer here (${j.resolvable})` });
+    b.onclick = () => openResolve(j);
+    out.unshift(b);
+  }
+  if (j.form_url && /^https?:\/\//.test(j.form_url) && j.status !== "applied") {
+    out.unshift(el("a", { class: "badge b-auto", href: j.form_url, target: "_blank", rel: "noopener noreferrer",
+                          text: "open application form →" }));
+  }
+  if (/bot: (dry run ok|applied|couldn't fill|submit failed|finish in your browser)/.test(j.notes || "")) {
+    out.push(el("a", { class: "badge", href: `/api/shot?id=${encodeURIComponent(j.id)}`, target: "_blank", text: "screenshot" }));
+  }
+  const open = state.tab === "to_review" || state.tab === "to_apply";
+  if (j.fit) {
+    const [label, cls] = FIT_BADGE[j.fit];
+    out.unshift(el("span", { class: "badge " + cls, title: j.fit_reason, text: j.fit_reason ? `${label} · ${j.fit_reason}` : label }));
+  } else if (open && j.eligible) {
+    out.unshift(el("span", { class: "badge b-manual", text: "fit not checked yet" }));
+  }
+  if (!j.eligible) out.unshift(el("span", { class: "badge b-bad", text: "fails filters: " + j.ineligible_reason }));
+  return out;
+}
+
+function render() {
+  renderTabs();
+  const answersTab = state.tab === "answers";
+  $("jobsView").hidden = answersTab;
+  $("answersView").hidden = !answersTab;
+  $("botCard").hidden = state.tab !== "to_apply";
+  $("runSel").disabled = state.selected.size === 0;
+  if (answersTab) return renderAnswers();
+  const banner = $("banner");
+  banner.hidden = !BANNERS[state.tab];
+  banner.textContent = BANNERS[state.tab] || "";
+
+  const jobs = visible();
+  const body = $("rows"); body.replaceChildren();
+  for (const j of jobs) {
+    const box = el("input", { type: "checkbox", "aria-label": `Select ${j.company} ${j.title}` });
+    box.checked = state.selected.has(j.id);
+    box.onchange = () => { box.checked ? state.selected.add(j.id) : state.selected.delete(j.id); render(); };
+    const href = safeUrl(j.url);
+    const role = href ? el("a", { href, target: "_blank", rel: "noopener noreferrer", text: j.title || "(no title)" })
+                      : document.createTextNode(j.title || "(no title)");
+    const via = el("span", { class: "badge " + (j.auto ? "b-auto" : "b-manual"),
+                             text: (j.auto ? "Auto · " : "") + (j.ats || "unknown") });
+    const salary = el("span", { class: j.below_floor ? "b-bad" : "", text: j.salary || "—" });
+    const tr = el("tr", { class: state.selected.has(j.id) ? "sel" : "" },
+      el("td", {}, box),
+      el("td", { text: j.company }),
+      el("td", {}, role),
+      el("td", {}, el("div", { text: j.location || "—" }), el("div", { class: "muted", text: j.tier_label })),
+      el("td", { class: "hide-sm" }, salary),
+      el("td", {}, via),
+      el("td", { class: "hide-sm muted", text: ageText(j) }),
+      el("td", { class: "hide-sm" }, ...rowBadges(j)));
+    body.append(tr);
+  }
+  if (!jobs.length) body.append(el("tr", {}, el("td", { colspan: "8", class: "muted", text: "Nothing here." })));
+
+  const hidden = state.jobs.length - jobs.length;
+  $("shown").textContent = `Showing ${jobs.length} of ${state.jobs.length}` + (hidden ? ` (${hidden} hidden by filters)` : "");
+  $("selCount").textContent = state.selected.size ? `· ${state.selected.size} selected` : "";
+  const all = $("selAll");
+  all.checked = jobs.length > 0 && jobs.every((j) => state.selected.has(j.id));
+
+  const actions = $("actions"); actions.replaceChildren();
+  for (const [status, label, primary] of ACTIONS[state.tab] || []) {
+    const b = el("button", { class: "act" + (primary ? " primary" : ""), type: "button", text: label });
+    b.disabled = state.selected.size === 0;
+    b.onclick = () => setStatus(status);
+    actions.append(b);
+  }
+}
+
+async function setStatus(status) {
+  const ids = [...state.selected];
+  // Marking applied is bookkeeping only; make sure nobody mistakes it for sending the application.
+  if (status === "applied" && state.tab !== "applied" &&
+      !confirm(`This only records that you applied yourself, outside jobbot. Nothing is sent to the company.\n\n` +
+               `To have the bot submit, use "Run bot" with a site ticked under "Submit for real on".\n\nMark ${ids.length} role(s) as applied?`)) return;
+  try {
+    const res = await api("/api/status", { ids, status });
+    state.selected.clear(); await load();
+    if (res.bot) { $("botMsg").textContent = "Bot: " + res.bot; pollBot(); }
+  }
+  catch (e) { alert("Couldn't update: " + e.message); }
+}
+
+async function load() {
+  const jobsTab = state.tab === "answers" ? "to_review" : state.tab;
+  const [jobs, counts, answers] = await Promise.all([api(`/api/jobs?tab=${jobsTab}`), api("/api/summary"), api("/api/answers")]);
+  state.jobs = jobs; state.counts = counts; state.answers = answers;
+  state.counts.answers = answers.pending.length;
+  const ids = new Set(jobs.map((j) => j.id));
+  for (const id of [...state.selected]) if (!ids.has(id)) state.selected.delete(id);
+  render();
+}
+
+$("selAll").onchange = (e) => {
+  for (const j of visible()) e.target.checked ? state.selected.add(j.id) : state.selected.delete(j.id);
+  render();
+};
+for (const id of ["q", "tier", "fresh", "fit", "eligibleOnly", "autoOnly", "hideLow"]) $(id).addEventListener("input", render);
+
+// Link check status: poll while a check runs, reload the table when it finishes.
+let wasRunning = false;
+async function pollCheck() {
+  let c;
+  try { c = await api("/api/check"); } catch { return; }
+  const s = c.summary || {};
+  $("checkStatus").textContent = c.running
+    ? `Checking links: ${c.done}/${c.total} · ${c.closed} closed so far`
+    : c.finished ? `Link check done at ${c.finished}: ${s.checked || 0} checked, ${s.marked_closed || 0} closed, ${s.unknown || 0} couldn't be read`
+                 : "";
+  $("checkBtn").disabled = c.running;
+  if (wasRunning && !c.running) load();
+  wasRunning = c.running;
+  setTimeout(pollCheck, c.running ? 3000 : 30000);
+}
+$("checkBtn").onclick = async () => { await api("/api/check/start", {}); pollCheck(); };
+pollCheck();
+
+// Fit check status: same pattern. The table reloads after each finished run.
+let fitWasRunning = false;
+async function pollFit() {
+  let f;
+  try { f = await api("/api/fit"); } catch { return; }
+  const c = f.counts || {};
+  const tally = `${c.good || 0} good, ${c.stretch || 0} stretch, ${c.poor || 0} poor`;
+  $("fitStatus").textContent = f.running
+    ? (f.stage === "reading" ? `Fit check: reading job descriptions ${f.done}/${f.total}`
+                             : `Fit check: ${f.done}/${f.total} screened · ${tally}`)
+    : f.finished ? `Fit check done at ${f.finished}: ${tally}` + (f.error ? ` · stopped early: ${f.error}` : "")
+                 : "";
+  $("fitBtn").disabled = f.running;
+  if (fitWasRunning && !f.running) load();
+  fitWasRunning = f.running;
+  setTimeout(pollFit, f.running ? 4000 : 30000);
+}
+$("fitBtn").onclick = async () => { await api("/api/fit/start", {}); pollFit(); };
+pollFit();
+
+// ---------------------------------------------------------------- application bot
+let botWasRunning = false;
+const HANDLER_NAMES = { greenhouse: "Greenhouse", ashby: "Ashby", lever: "Lever (has CAPTCHAs)" };
+
+async function loadBotSettings() {
+  let s;
+  try { s = await api("/api/settings"); } catch { return; }
+  const boxes = $("liveBoxes"); boxes.replaceChildren();
+  for (const h of s.handlers) {
+    const box = el("input", { type: "checkbox" });
+    box.checked = s.live_handlers.includes(h);
+    box.onchange = async () => {
+      if (box.checked && !confirm(`Let the bot click Submit on ${HANDLER_NAMES[h] || h} forms for roles you pick, ` +
+          `without asking again? It still stops for anything it isn't sure about, and stays within ` +
+          `${s.daily_limit} a day / ${s.per_company_per_day} per company.`)) { box.checked = false; return; }
+      const live = [...boxes.querySelectorAll("input")].map((b, i) => b.checked ? s.handlers[i] : null).filter(Boolean);
+      await api("/api/settings", { live_handlers: live });
+      loadBotSettings();
+    };
+    boxes.append(el("label", { class: "chk" }, box, " " + (HANDLER_NAMES[h] || h)));
+  }
+  $("autoRun").checked = s.auto_run_on_pick;
+  for (const box of document.querySelectorAll("[data-agree]")) {
+    const key = box.dataset.agree;
+    box.checked = !!s[key];
+    box.onchange = async () => {
+      const warn = key === "accept_arbitration_agreements"
+        ? "Arbitration agreements give up your right to take an employer to court (disputes go to private arbitration). Let the bot accept them for you on every application?"
+        : key === "accept_other_agreements" ? "Let the bot accept other required terms and \"I certify the information is true\" statements on every application? (AI-use questions always stay with you.)"
+        : key === "solve_checks_myself" ? "Live runs will open a visible browser window on your screen. When a site shows a CAPTCHA, jobbot tells you here and waits up to 15 minutes while you solve it in that window. Turn on?" : "";
+      if (box.checked && warn && !confirm(warn)) { box.checked = false; return; }
+      await api("/api/settings", { [key]: box.checked });
+    };
+  }
+  const problems = [];
+  if (!s.bot_installed) problems.push("the bot isn't installed (no .venv)");
+  if (!s.claude_found) problems.push("Claude Code isn't found, so it can't draft");
+  if (problems.length) $("botMsg").textContent = "Can't run yet: " + problems.join("; ") + ".";
+}
+$("autoRun").onchange = async (e) => { await api("/api/settings", { auto_run_on_pick: e.target.checked }); };
+
+async function pollBot() {
+  let st;
+  try { st = await api("/api/apply"); } catch { return; }
+  $("botStatus").textContent = st.running
+    ? `running${st.dry_run ? " (dry run)" : ""} since ${st.started}${st.queued ? ` · ${st.queued} queued` : ""}…`
+    : st.finished ? `last run finished at ${st.finished}` : "idle";
+  $("botLog").textContent = st.lines.length ? st.lines.join("\n") : "(no run yet)";
+  $("runAll").disabled = st.running;
+  if (botWasRunning && !st.running) load();
+  botWasRunning = st.running;
+  if (st.running) setTimeout(pollBot, 3000);
+}
+async function runBot(ids) {
+  try {
+    const res = await api("/api/apply/start", { ids, dry_run: $("dryOnly").checked });
+    $("botMsg").textContent = res.message;
+  } catch (e) { $("botMsg").textContent = e.message; }
+  pollBot();
+}
+$("runAll").onclick = () => runBot([]);
+$("runSel").onclick = () => runBot([...state.selected]);
+loadBotSettings();
+pollBot();
+
+// Warn when the running jobbot is older than its code (it then can't serve new features).
+async function pollMeta() {
+  try { const m = await api("/api/meta"); $("restartCard").hidden = !m.outdated; } catch { /* server stopped */ }
+  setTimeout(pollMeta, 60000);
+}
+pollMeta();
+
+// Location filter and subtitle follow profile/search.toml.
+api("/api/meta").then((m) => {
+  m.tiers.forEach((name, i) => $("tier").append(el("option", { value: String(i + 1), text: name })));
+  const places = m.tiers.slice(0, -2);
+  if (places.length) $("subtitle").textContent = `Pick roles to apply to. Ranked by location (${places.join(", ")}, then the rest), ` +
+    "how recently they were posted, salary, new-grad signal and the fit check (your profile vs. the job description).";
+}).catch(() => {});
+
+// ---------------------------------------------------------------- security codes
+// Greenhouse sometimes emails a code to confirm a person is applying. The bot waits; you type the
+// code from your email here and it finishes the application. jobbot never reads your email.
+const codeDrafts = {};
+async function pollCodes() {
+  let list = [];
+  try { list = await api("/api/codes"); } catch { setTimeout(pollCodes, 10000); return; }
+  const card = $("codesCard");
+  const focused = document.activeElement && card.contains(document.activeElement) ? document.activeElement.dataset.id : null;
+  card.hidden = !list.length;
+  document.title = list.length ? `(${list.length}) waiting for you · jobbot` : "jobbot";
+  if (list.length) {
+    card.replaceChildren(el("b", { text: list.length === 1 ? "An application is waiting for you" : `${list.length} applications are waiting for you` }),
+      el("div", { class: "muted", text: "These sites want to confirm a person is applying: paste the code they emailed you, or solve the CAPTCHA in the jobbot window. The bot does the rest." }));
+    for (const c of list) {
+      if (c.kind === "check") {
+        const show = el("button", { class: "act primary", type: "button", text: "Show the bot's window" });
+        const note = el("span", { class: "muted", text: ` · ${c.minutes_left} min left` });
+        show.onclick = async () => {
+          try {
+            const r = await api("/api/window/front", {});
+            note.textContent = r.shown ? " · it's in front now" : " · look for \"Chrome for Testing\" in your Dock or taskbar";
+          } catch (e) { note.textContent = " · " + e.message; }
+        };
+        card.append(el("div", { class: "code-row" }, el("span", {}, el("b", { text: c.company }), ` — ${c.title}: `),
+          el("b", { text: c.message || "solve the CAPTCHA in the jobbot browser window" }), show, note));
+        continue;
+      }
+      const inp = el("input", { type: "text", placeholder: "Code from the email", autocomplete: "one-time-code" });
+      inp.dataset.id = c.id; inp.value = codeDrafts[c.id] || "";
+      inp.oninput = () => { codeDrafts[c.id] = inp.value; };
+      const send = el("button", { class: "act primary", type: "button", text: "Submit code" });
+      const msg = el("span", { class: c.status === "wrong" ? "b-bad" : "muted",
+        text: c.status === "checking" || c.entered ? "Checking…" : c.status === "wrong" ? c.message : `${c.minutes_left} min left` });
+      send.onclick = async () => {
+        try { await api("/api/codes", { id: c.id, code: inp.value }); delete codeDrafts[c.id]; msg.className = "muted"; msg.textContent = "Checking…"; }
+        catch (e) { msg.className = "b-bad"; msg.textContent = e.message; }
+      };
+      inp.onkeydown = (e) => { if (e.key === "Enter") send.click(); };
+      card.append(el("div", { class: "code-row" }, el("span", {}, el("b", { text: c.company }), ` — ${c.title} · sent to ${c.sent_to}`), inp, send, msg));
+      if (focused === c.id) inp.focus();
+    }
+  }
+  setTimeout(pollCodes, list.length || botWasRunning ? 3000 : 15000);
+}
+pollCodes();
+
+// ---------------------------------------------------------------- answer here (Needs you)
+// What stopped the bot on one application, answered in place; the bot then runs it again.
+const AGREE_RE = /agree|acknowledge|accept|consent|confirm|certify|i have read|^yes\b/i;
+async function openResolve(j) {
+  const dlg = $("resolveDlg"), body = $("resolveBody");
+  body.replaceChildren(el("p", { class: "muted", text: "Loading…" }));
+  dlg.showModal();
+  let info;
+  try { info = await api(`/api/resolve?id=${encodeURIComponent(j.id)}`); }
+  catch (e) { body.replaceChildren(el("p", { class: "msg err", text: e.message })); return; }
+  const fields = [];
+  const rows = info.items.map((it) => {
+    const box = el("div", { class: "item" }, el("div", { class: "q", text: it.category === "fit" || it.category === "sponsor_hint" ? it.reason : it.label }));
+    if (it.category === "agreement") {
+      const agree = (it.options || []).find((o) => AGREE_RE.test(o)) || "Yes";
+      const c = el("input", { type: "checkbox" });
+      box.append(el("label", { class: "chk" }, c, ` Accept for this application${it.options && it.options.length ? ` ("${agree}")` : ""}`));
+      fields.push(() => (c.checked ? [it.key, agree] : null));
+    } else if (it.category === "fit" || it.category === "sponsor_hint") {
+      const c = el("input", { type: "checkbox" });
+      box.append(el("label", { class: "chk" }, c, " Apply anyway"));
+      fields.push(() => (c.checked ? ["__apply_anyway__", true] : null));
+    } else if (!it.answerable) {
+      box.append(el("div", { class: "muted", text: `${it.reason}. Do this one in your browser.` }));
+    } else {
+      const opts = it.options || [];
+      const inp = opts.length ? el("select", {}, el("option", { value: "", text: "Choose…" }), ...opts.map((o) => el("option", { value: o, text: o })))
+                              : el("input", { type: "text", placeholder: "Your answer" });
+      box.append(inp);
+      if (it.category === "ai_policy") box.append(el("div", { class: "muted", text: "The bot writes your letters and answers with Claude: answer truthfully." }));
+      let rem = null;
+      if (it.can_remember) { rem = el("input", { type: "checkbox", checked: "" }); box.append(el("label", { class: "chk" }, rem, " Remember for future forms")); }
+      fields.push(() => (inp.value ? [it.key, inp.value, rem && rem.checked] : null));
+    }
+    return box;
+  });
+  const msg = el("div", { class: "msg" });
+  const go = el("button", { class: "act primary", type: "button", text: "Save and let the bot apply" });
+  const cancel = el("button", { class: "act", type: "button", text: "Cancel", onclick: () => dlg.close() });
+  go.onclick = async () => {
+    const answers = {}, remember = []; let anyway = false;
+    for (const f of fields) {
+      const v = f(); if (!v) continue;
+      if (v[0] === "__apply_anyway__") anyway = true; else { answers[v[0]] = v[1]; if (v[2]) remember.push(v[0]); }
+    }
+    if (!Object.keys(answers).length && !anyway) { msg.className = "msg err"; msg.textContent = "Answer or tick at least one item."; return; }
+    go.disabled = true;
+    try {
+      const r = await api("/api/resolve", { id: j.id, answers, remember, apply_anyway: anyway });
+      msg.className = "msg"; msg.textContent = r.message;
+      setTimeout(() => { dlg.close(); load(); pollBot(); }, 1200);
+    } catch (e) { msg.className = "msg err"; msg.textContent = e.message; go.disabled = false; }
+  };
+  body.replaceChildren(el("h2", { style: "margin:0 0 4px;font-size:16px", text: `${info.company} — ${info.title}` }),
+    el("p", { class: "muted", text: "What stopped the bot. Your answers apply to this application; the bot then runs it again (and submits on sites you ticked)." }),
+    ...rows, el("div", { class: "row", style: "margin-top:12px" }, go, cancel), msg);
+}
+
+// ---------------------------------------------------------------- saved answers
+function answerInput(item) {
+  const opts = item.options || [];
+  if (opts.length && ["select", "radio", "listbox", "boolean", "combobox"].includes(item.kind)) {
+    const sel = el("select", {}, el("option", { value: "", text: "Choose…" }));
+    for (const o of opts) sel.append(el("option", { value: o, text: o }));
+    return sel;
+  }
+  if (opts.length && ["multiselect", "checkbox"].includes(item.kind)) {
+    const sel = el("select", { multiple: "" });
+    for (const o of opts) sel.append(el("option", { value: o, text: o }));
+    return sel;
+  }
+  return item.kind === "textarea" ? el("textarea", { placeholder: "Your answer" }) : el("input", { type: "text", placeholder: "Your answer" });
+}
+const inputValue = (inp) => inp.multiple ? [...inp.selectedOptions].map((o) => o.value) : inp.value.trim();
+
+function renderAnswers() {
+  const { pending, saved } = state.answers;
+  $("pendingCount").textContent = pending.length ? `(${pending.length})` : "";
+  const list = $("pendingList"); list.replaceChildren();
+  if (!pending.length) list.append(el("p", { class: "muted", text: "Nothing waiting. Questions show up here after the bot or the browser helper leaves one for you." }));
+  for (const item of pending) {
+    const inp = answerInput(item);
+    const only = el("input", { type: "checkbox" });
+    const msg = el("span", { class: "muted" });
+    const save = el("button", { class: "act primary", type: "button", text: "Save" });
+    save.onclick = async () => {
+      const answer = inputValue(inp);
+      if (!answer || (Array.isArray(answer) && !answer.length)) { msg.textContent = "Type or pick an answer first."; return; }
+      try {
+        await api("/api/answers/save", { question: item.question, answer, kind: item.kind, options: item.options,
+                                         company: item.companies[0] || "", only_this_company: only.checked });
+        await load();
+      } catch (e) { msg.textContent = e.message; }
+    };
+    const where = item.companies.length ? `asked by ${item.companies.slice(0, 4).join(", ")}${item.companies.length > 4 ? "…" : ""}` : "";
+    list.append(el("div", { class: "q" },
+      el("div", {}, el("b", { text: item.question })),
+      el("div", { class: "muted", text: [where, item.reason].filter(Boolean).join(" · ") }),
+      el("div", { class: "row ans" }, inp, save,
+         item.companies.length === 1 ? el("label", { class: "chk" }, only, ` Only for ${item.companies[0]}`) : null, msg)));
+  }
+  $("savedCount").textContent = saved.length ? `(${saved.length})` : "";
+  const rows = $("savedRows"); rows.replaceChildren();
+  if (!saved.length) rows.append(el("tr", {}, el("td", { colspan: "4", class: "muted", text: "None yet." })));
+  for (const e of saved) {
+    const del = el("button", { class: "act", type: "button", text: "Delete" });
+    del.onclick = async () => { await api("/api/answers/delete", { key: e.key, company: e.company || "" }); load(); };
+    rows.append(el("tr", {},
+      el("td", { text: e.question }),
+      el("td", { text: Array.isArray(e.answer) ? e.answer.join(", ") : e.answer }),
+      el("td", { class: "hide-sm muted", text: e.company ? `${e.company} only` : "every company" }),
+      el("td", {}, del)));
+  }
+}
+$("ownForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try { await api("/api/answers/save", { question: $("ownQ").value, answer: $("ownA").value, kind: "text" }); }
+  catch (err) { alert(err.message); return; }
+  $("ownQ").value = ""; $("ownA").value = ""; load();
+};
+
+$("addForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const msg = $("addMsg"); msg.className = "msg"; msg.textContent = "Looking up the job…";
+  $("addBtn").disabled = true;
+  try {
+    const res = await api("/api/add", { url: $("addUrl").value, company: $("addCompany").value,
+                                        title: $("addTitle").value, location: $("addLocation").value });
+    msg.textContent = `${res.job.company || "?"} — ${res.job.title || "?"}: ${res.message}`;
+    for (const id of ["addUrl", "addCompany", "addTitle", "addLocation"]) $(id).value = "";
+    await load();
+  } catch (err) { msg.className = "msg err"; msg.textContent = err.message; }
+  finally { $("addBtn").disabled = false; }
+};
+
+load().catch((e) => { $("rows").replaceChildren(el("tr", {}, el("td", { colspan: "8", class: "msg err", text: "Couldn't load: " + e.message }))); });
+</script>
+</body>
+</html>

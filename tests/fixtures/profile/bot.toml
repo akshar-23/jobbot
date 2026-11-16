@@ -1,0 +1,36 @@
+# Application bot settings. See CLAUDE.md, section "Application bot".
+
+# Form handlers allowed to click Submit. Every handler starts in dry-run mode:
+# it fills the form, saves a screenshot and stops before Submit. Add a handler
+# here only after you've checked its dry-run screenshots.
+# Options: "greenhouse" (built), "lever", "ashby" (coming next).
+live_handlers = []
+
+daily_limit = 50              # most applications the bot submits per day
+per_company_per_day = 2       # most per company per day
+
+# Required agreements on application forms. false = the application goes to
+# Needs you so you decide yourself; true = the bot answers "I agree" for you.
+accept_privacy_notices = true         # "I acknowledge the Applicant Privacy Notice"
+accept_arbitration_agreements = false # gives up your right to sue in court; read before enabling
+accept_other_agreements = false       # anything else: terms, codes of conduct, certifications
+
+headless = true               # false shows the browser window while it works
+draft_effort = "medium"       # Claude effort for drafting: low | medium | high
+
+# Fit check (python3 -m jobbot fit): reads each new role's job description and marks it
+# good / stretch / poor against profile/facts.md. The dashboard hides "poor" by default.
+fit_on_serve = true           # run it in the background after `serve`'s link check
+fit_model = "sonnet"          # sonnet is plenty for screening and uses less of your seat
+fit_effort = "medium"         # low | medium | high
+
+# Start the bot as soon as you pick roles (dashboard "Pick for applying" or "Add to To apply").
+# It only clicks Submit for sites in live_handlers; everything else is a dry run.
+# Also a checkbox on the dashboard's To apply tab.
+auto_run_on_pick = true
+
+# Words that must never appear in a drafted letter or answer.
+forbidden_terms = ["secretproject", "codename-zephyr"]
+
+# Resume variant recorded in the tracker for applications the bot sends.
+resume_variant = "sde"

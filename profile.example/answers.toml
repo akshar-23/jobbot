@@ -1,0 +1,93 @@
+# Fixed answers for application forms. EXAMPLE PROFILE: Jamie Example is not a real person.
+# The setup wizard (dashboard → Profile) replaces this with yours in profile/answers.toml.
+#
+# The bot and the browser helper copy these into forms as-is. Claude never writes them:
+# work authorization, sponsorship, demographics and salary always come from this file.
+# A required field still set to "TODO" stops the bot from submitting.
+
+[identity]
+first_name = "Jamie"
+last_name = "Example"
+preferred_name = "Jamie"
+email = "jamie@example.com"
+phone = "+1 555-010-0123"
+city = "Los Angeles"
+state = "CA"
+country = "United States"
+postal_code = "90028"
+location = "Los Angeles, CA"     # answer to "Where are you based?"
+form_city = "Los Angeles"        # typed into city-search boxes (must be a real city)
+
+[address]
+# Some forms (Workday) ask for a mailing address. Blank line1 = those fields come to you.
+line1 = ""
+line2 = ""
+city = ""
+phone_type = "Mobile"
+
+[links]
+linkedin = "https://www.linkedin.com/in/example"
+portfolio = "https://example.com/portfolio"
+reel = "https://example.com/reel"          # demo reel / showreel link
+artstation = ""
+github = ""
+
+[documents]
+resume_pdf = "resumes/Jamie_Example_Resume.pdf"
+
+[work_authorization]
+authorized_to_work_in_us = true
+requires_sponsorship = false     # true = you'll need a visa sponsored (H-1B etc.)
+current_status = "US citizen"    # e.g. "F-1 OPT", "Green card", "US citizen"
+opt_end_date = ""                # YYYY-MM-DD, only on OPT
+stem_opt_eligible = false
+us_citizen = true
+permanent_resident = false
+security_clearance = false
+previous_visas = []
+citizenship = "United States"
+
+[preferences]
+salary_floor = 55000             # listings that show less are hidden by default
+salary_target = 70000            # ranked higher; also the answer to "desired salary"
+willing_to_relocate = true
+open_to_remote = true
+prefers_remote = false           # "If remote is allowed, do you plan to work remotely?"
+open_to_onsite = true            # in-office / hybrid questions (Yes/No only)
+earliest_start = "Two weeks after an offer"
+
+[education]
+school = "Example School of Art and Design"
+degree = "Bachelor of Fine Arts"
+major = "Animation"
+related_majors = ["Character Animation", "Film and Animation", "Digital Arts"]
+graduation = "2026-05"
+gpa = "3.7"
+
+[current_job]
+company = ""
+title = ""
+start_date = ""
+
+[voluntary_disclosures]
+# Optional on every form. Write the meaning; jobbot finds each form's wording.
+# "Decline to self-identify" picks the form's decline option.
+gender = "Decline to self-identify"
+race_ethnicity = "Decline to self-identify"
+hispanic_latino = "Decline to self-identify"
+veteran_status = "Decline to self-identify"
+disability_status = "Decline to self-identify"
+pronouns = ""
+
+[misc]
+how_did_you_hear = "Company careers page"
+previously_worked_here = false
+previously_interviewed_at = []
+marketing_opt_in = false
+over_18 = true
+spoken_languages = ["English"]
+# "" = ask me; true / false (or a list) = jobbot answers it everywhere.
+relatives_at_companies = []
+government_employee = false
+needs_accommodation = ""
+can_perform_essential_functions = ""

@@ -1,0 +1,8 @@
+# tracker.csv is append-mostly. If a merge ever touches it from both sides,
+# keep both sides' lines instead of conflict markers; `jobbot sync` removes
+# any duplicate rows this produces.
+tracker.csv merge=union
+
+# Launchers: Windows batch files need CRLF, Mac .command files LF.
+*.bat text eol=crlf
+*.command text eol=lf

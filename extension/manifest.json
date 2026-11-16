@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "jobbot helper",
+  "version": "1.0.0",
+  "description": "Fills the job application open in this tab using your local jobbot (answers.toml + facts.md). You review and submit.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["http://127.0.0.1:8765/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "jobbot: fill this page (Alt+J)" },
+  "commands": {
+    "fill-page": {
+      "suggested_key": { "default": "Alt+J", "mac": "Alt+J" },
+      "description": "Fill the application on this page"
+    }
+  }
+}

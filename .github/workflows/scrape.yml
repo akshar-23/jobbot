@@ -1,0 +1,59 @@
+name: Nightly scrape
+
+on:
+  schedule:
+    # 07:00 UTC = 02:00 EST / 03:00 EDT. GH Actions cron is UTC and can be
+    # delayed by 5-15 min under load — fine for an overnight job.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        run: python scraping/scraper.py
+
+      - name: Upload log as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-log-${{ github.run_id }}
+          path: scraping/log.txt
+          retention-days: 30
+          if-no-files-found: warn
+
+      # The scraper no longer edits tracker.csv; `python3 -m jobbot sync` imports
+      # these files locally, so this commit never conflicts with tracker edits.
+      - name: Commit new postings and open-jobs snapshot
+        run: |
+          git config user.name "scraper-bot"
+          git config user.email "scraper-bot@users.noreply.github.com"
+          mkdir -p scraping/postings scraping/state   # a new copy may have neither yet
+          git add -A scraping/postings scraping/state
+          if git diff --cached --quiet; then
+            echo "No new postings — skipping commit."
+          else
+            git commit -m "nightly scrape $(date -u +%Y-%m-%d)"
+            git push
+          fi

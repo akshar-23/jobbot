@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "description": "EXAMPLE PROFILE: studios a new-grad character animator might watch. The setup wizard's 'Suggest companies' writes yours to profile/companies.json. Groups are just labels; each entry needs company + ats_provider and either ats_slug (greenhouse, lever, ashby, workable, smartrecruiters) or career_url (workday)."
+  },
+  "animation_vfx": [
+    {"company": "Sony Pictures Imageworks", "ats_provider": "greenhouse", "ats_slug": "sonypicturesimageworks"},
+    {"company": "Skydance Animation", "ats_provider": "lever", "ats_slug": "skydance"},
+    {"company": "Moonbug Entertainment", "ats_provider": "workable", "ats_slug": "moonbug-entertainment"}
+  ],
+  "games": [
+    {"company": "Riot Games", "ats_provider": "greenhouse", "ats_slug": "riotgames"},
+    {"company": "Epic Games", "ats_provider": "greenhouse", "ats_slug": "epicgames"},
+    {"company": "Insomniac Games", "ats_provider": "greenhouse", "ats_slug": "insomniac"},
+    {"company": "Naughty Dog", "ats_provider": "greenhouse", "ats_slug": "naughtydog"},
+    {"company": "Bungie", "ats_provider": "greenhouse", "ats_slug": "bungie"},
+    {"company": "Scopely", "ats_provider": "greenhouse", "ats_slug": "scopely"},
+    {"company": "Wildlife Studios", "ats_provider": "greenhouse", "ats_slug": "wildlifestudios"},
+    {"company": "Roblox", "ats_provider": "greenhouse", "ats_slug": "roblox"}
+  ]
+}

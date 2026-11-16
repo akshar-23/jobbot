@@ -1,0 +1,128 @@
+# Test profile for tests/ (not a real person). Mirrors a real answers.toml's structure.
+# Fixed answers for application forms.
+#
+# The application bot copies these into forms as-is. Claude never writes or
+# changes them: work authorization, sponsorship, demographic and salary
+# questions always come from this file.
+#
+# Anything set to "TODO" must be filled in before the bot submits anything.
+# The bot refuses to submit a form that needs a TODO field.
+
+[identity]
+first_name = "Test"
+last_name = "Candidate"
+preferred_name = "Test"
+email = "test@example.com"
+phone = "+1 555-010-0199"
+city = "San Francisco Bay Area"
+state = "CA"
+country = "United States"
+postal_code = "94105"            # some forms require it
+# Answer to free-text "Location" / "Where are you based?" questions.
+location = "San Francisco Bay Area, CA"
+# City typed into city-search boxes (they only accept real cities, not
+# "Bay Area"). Must be a real city.
+form_city = "San Francisco"
+
+[address]
+# Workday and some other forms ask for a full mailing address. Leave line1 blank
+# and those fields come to you ("Needs you"); fill it in to have them filled.
+line1 = "1 Example Way"
+line2 = ""
+city = "San Francisco"                        # the city for this ZIP code
+phone_type = "Mobile"            # "Phone Device Type" dropdowns
+
+[links]
+linkedin = "https://www.linkedin.com/in/example"
+github = "https://github.com/example"
+portfolio = "https://example.com/portfolio"
+google_scholar = "https://scholar.google.com/citations?user=EXAMPLE"         # your scholar.google.com/citations?user=... link
+
+[documents]
+# The resume the bot uploads. Re-export from Word to this path after edits.
+resume_pdf = "resumes/Test_Candidate_Resume.pdf"
+
+[work_authorization]
+# "Are you legally authorized to work in the United States?"
+authorized_to_work_in_us = true
+# "Will you now or in the future require visa sponsorship?"  Always true for you.
+requires_sponsorship = true
+current_status = "F-1 OPT"
+opt_end_date = "2027-06-23"           # YYYY-MM-DD, from your EAD card
+stem_opt_eligible = true        # true / false: check the CIP code on your I-20
+us_citizen = false
+permanent_resident = false      # green card holder
+security_clearance = false
+# Country of citizenship, for "What is your country of citizenship?" questions
+# (often asked for export-control reasons). Leave "" to answer those yourself.
+# Example: citizenship = "India"
+# Visas you held before the current one, for "Do you hold or have you held an H-1B?"
+# (your current status above already counts). Example: ["H-4"]
+previous_visas = []
+citizenship = "India"
+
+[preferences]
+salary_floor = 110000           # listings that show less are hidden by default
+salary_target = 150000          # ranked higher; also the answer to "desired salary"
+willing_to_relocate = true
+open_to_remote = true
+# "If the role allows remote work, do you plan to work remotely?" false = No
+# (you'd work from the office or hybrid).
+prefers_remote = false
+# "Are you able to work onsite / in the office 3 days a week / hybrid?" (Yes/No only).
+open_to_onsite = true
+earliest_start = "Two weeks after an offer"
+# Ranking order. Remote and other US cities rank below these.
+preferred_locations = ["San Francisco Bay Area, CA", "Boston, MA", "New York, NY", "Seattle, WA"]
+
+[education]
+school = "Example University"
+degree = "Master of Science"
+major = "Game Design and Development"
+# Tried in order when a form's major list doesn't have yours.
+related_majors = ["Game Design", "Computer Science", "Computer Engineering"]
+graduation = "2026-05"
+gpa = "3.9"
+undergrad_school = "Example Institute of Technology"
+undergrad_degree = "Bachelor of Engineering"
+undergrad_major = "Computer Engineering"
+undergrad_graduation = "2023-05"
+undergrad_gpa = "3.6"
+
+[current_job]
+company = "Example Studio"
+title = "Gameplay Programming Intern"
+start_date = "2026-07"             # YYYY-MM
+
+[voluntary_disclosures]
+# Demographic (EEO) questions. Optional on every form and never used in hiring decisions.
+# Write the meaning, not one form's wording: jobbot finds the matching option on each form.
+# "Decline to self-identify" picks the form's decline option.
+gender = "Male"                 # finds "Male" or "Man"
+# Race: the first of these a form offers is picked. "Asian" also matches
+# "Asian (Not Hispanic or Latino)"; "American Indian or Alaska Native" is never picked for Indian.
+race_ethnicity = ["South Asian", "Asian Indian", "Asian"]
+hispanic_latino = "No"          # finds "No" / "Not Hispanic or Latino"
+veteran_status = "No"           # finds "I am not a (protected) veteran" / "No"
+disability_status = "No"        # finds "No, I do not have a disability…" / "No"
+pronouns = ""                   # blank = skip the question
+# Sexual orientation and transgender questions are always declined.
+
+[misc]
+how_did_you_hear = "Company careers page"
+previously_worked_here = false
+# Companies you've interviewed with before. "Have you interviewed at X before?"
+# is answered Yes only for these, No for everyone else.
+previously_interviewed_at = ["Example Robotics"]
+marketing_opt_in = false        # WhatsApp / SMS / newsletter opt-ins
+over_18 = true
+# Languages you speak, for "Language skills (check all that apply)". Add others
+# you're comfortable working in, e.g. ["English", "Hindi", "Gujarati"].
+spoken_languages = ["English"]
+
+# Standard yes/no questions. Leave "" and the question comes to you ("Needs you"); set
+# true/false (or a list) and jobbot answers it everywhere.
+relatives_at_companies = ""     # companies where a relative works, e.g. ["Google"]; [] = none anywhere
+government_employee = "false"        # worked for a government (federal, state, local) recently? true/false
+needs_accommodation = "false"        # need an accommodation to complete the application? true/false
+can_perform_essential_functions = "true"   # "able to perform the essential functions…?" true/false

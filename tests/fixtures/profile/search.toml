@@ -1,0 +1,240 @@
+# What to look for and how to judge it. Read by the nightly scraper, the dashboard and the fit
+# check; the setup wizard (dashboard → Profile) writes it, and you can edit it by hand.
+# Title patterns are regular expressions matched as whole words, ignoring case.
+
+[target]
+# Levels: titles levelled above max_level are dropped (III, IV…, and Microsoft IC3+ when it's 2).
+# level_nouns are the words a level number follows ("Engineer III", "SDE 3").
+max_level = 2
+level_nouns = ["engineer", "sde", "scientist", "developer", "programmer"]
+# Postings asking more years than this are dropped (unless they also invite new grads).
+max_years_required = 3
+drop_manager_titles = true
+drop_lead_titles = true
+drop_phd_roles = true            # PhD-only and postdoc titles
+drop_contract_roles = true       # titles marked contract / contractor
+drop_apprenticeships = true      # apprentice / apprenticeship titles
+
+[titles]
+# A title must contain one of these to be considered.
+include = [
+    'engineer',
+    'engineering',
+    'developer',
+    'programmer',
+    'scientist',
+    'sde',
+    'sre',
+    'researcher',
+    'machine\s*learning',
+    'gameplay',
+    'graphics',
+    'robotics',
+]
+# Not the kind of job you're after (other professions, customer-facing engineering…).
+not_target = [
+    'artist',
+    'designer',
+    'producer',
+    'marketing',
+    'sales',
+    'recruiter',
+    'hr',
+    'finance',
+    'accountant',
+    'legal',
+    'counsel',
+    'paralegal',
+    'animator',
+    'writer',
+    'narrative',
+    'composer',
+    'qa\s*tester',
+    'qa\s*analyst',
+    'community\s*manager',
+    'content\s*creator',
+    'customer\s*success',
+    'support\s*specialist',
+    'technical\s*writer',
+    'trainer',
+    'copywriter',
+    'illustrator',
+    'videographer',
+    'brand\b',
+    'people\s*partner',
+    'talent\s*partner',
+    'partnerships',
+    'business\s*development',
+    'embedded',
+    'firmware',
+    'hardware',
+    'fpga',
+    'asic',
+    'silicon',
+    'vlsi',
+    '\brf\s+engineer',
+    'analog\s+(?:circuit|design|engineer)',
+    'mechanical\s+engineer',
+    'electrical\s+engineer',
+    'solutions?\s*architect',
+    'solutions?\s*engineer',
+    'sales\s*engineer',
+    'field\s*engineer',
+    'field\s*engineering',
+    'applications?\s*engineer',
+    'developer\s*(?:advocate|relations|evangelist)',
+    'devrel',
+    'advocate',
+    'evangelist',
+    'technical\s+enablement',
+    'customer\s*engineering',
+    'customer\s*support',
+    'cloud\s*support',
+    'technical\s*support',
+    'support\s*engineer',
+    'network\s+development\s+engineer',
+    'network\s+engineer',
+    'teleoperat\w*',
+    'operator',
+    'technician',
+    'labeler',
+    'annotator',
+    'data\s+entry',
+]
+# Specialist areas outside your background.
+outside_background = [
+    'verification',
+    'physical\s+design',
+    'digital\s+design',
+    'mixed[\s-]+signal',
+    'chip\s+design',
+    'cpu\s+design',
+    'soc',
+    'rtl',
+    'eda',
+    'pcb',
+    'interposer',
+    'package\s+design',
+    'post[\s-]?silicon',
+    'dft',
+    'circuit',
+    'power\s+(?:methodology|management|optimization|generation|modeling|delivery|integrity)',
+    'power\s+and\s+performance',
+    'microgrids?',
+    'substation',
+    'cellular',
+    'wireless',
+    'modem',
+    'antenna',
+    'manufacturing',
+    'quality\s+engineer',
+    'pre[\s-]?production',
+    'npi',
+    'data\s+cent(?:er|re)',
+    'rack',
+    'reliability\s+engineer',
+    'site\s+reliability',
+    'sre',
+    'devops',
+    'operations\s+engineer',
+    'network\s+operations',
+    'networking',
+    'network\s+(?:solution|systems|security|automation)',
+    'nvlink',
+    'it\s+engineer',
+    'it\s+systems',
+    'client\s+platform',
+    'systems\s+administrator',
+    'business\s+systems',
+    'information\s+systems',
+    'sap',
+    'salesforce',
+    'hubspot',
+    'qa',
+    'sdet',
+    'test\s+engineer',
+    'validation\s+engineer',
+    'security\s+(?:engineer|research\w*|analyst|architect)',
+    'cyber\w*',
+    'threat\w*',
+    'vulnerabilit\w*',
+    'incident\s+response',
+    'reverse\s+engineer\w*',
+    'penetration',
+    'fraud\s+engineer',
+    'compilers?',
+    'kernel',
+    '(?:cuda|gpu|device)\s+drivers?',
+    'hpc',
+    'performance\s+(?:engineer|profiling|modeling)',
+    'customer\s+engineer',
+    'customer\s+succe\w*',
+    'pre-?sales',
+    'computational\s+chemistry',
+    'life\s+sciences',
+    'neuroimaging',
+    'bioinformatics',
+    'gis',
+    'geographic\s+information',
+]
+# Other tracks you don't want.
+other_tracks = [
+    'reporting',
+    'business\s+intelligence',
+    'bi\s+developer',
+    'application\s+analyst',
+    'quantitative\s+research\w*',
+]
+
+# Company-specific rules. Amazon's software category is too broad: only titles starting with
+# these pass, and only with a new-grad signal in the title or description.
+[[company_rules]]
+company = "Amazon"
+title_starts_with = [
+    'software\s+(?:development|dev|developer)?\s*engineer',
+    'sde\b',
+    'applied\s+scientist',
+    '(?:machine\s+learning|ml)\s+engineer',
+    'research\s+scientist',
+    'research\s+engineer',
+    'data\s+scientist',
+    'front[\s-]?end\s+engineer',
+]
+require_new_grad_signal = true
+
+[sources]
+# The SimplifyJobs New-Grad list (software roles). Turn off for other professions.
+simplify_new_grad = true
+simplify_categories = ["Software", "Software Engineering", "AI/ML/Data"]
+
+# Location order for ranking: first is best. Remote and other US places rank after these.
+
+[[locations]]
+name = "SF Bay Area"
+match = 'san francisco|\bsf\b|bay area|palo alto|mountain view|menlo park|sunnyvale|san jose|santa clara|redwood city|san mateo|oakland|cupertino|foster city|burlingame|berkeley|emeryville|fremont|milpitas|los gatos|san bruno'
+
+[[locations]]
+name = "Boston"
+match = '\bboston\b|\bcambridge,?\s*(ma|massachusetts)\b|\bsomerville\b|\bwaltham\b|\bmassachusetts\b|,\s*ma\b'
+
+[[locations]]
+name = "NYC"
+match = '\bnew york\b|\bnyc\b|\bbrooklyn\b|\bmanhattan\b|,\s*ny\b'
+
+[[locations]]
+name = "Seattle"
+match = '\bseattle\b|\bbellevue\b|\bredmond\b|\bkirkland\b|\bbothell\b|,\s*wa\b'
+
+[fit]
+# What the fit check (Claude) weighs, in plain words. {years} and {years_plus} are filled in
+# from max_years_required. Write it about yourself in the third person.
+guide = '''
+What the candidate is looking for: full-time US software engineering, ML engineering or game
+programming roles at new-grad, entry, level I or level II. MS, not a PhD. Needs H-1B sponsorship.
+
+Verdicts:
+- good: the level fits ({years} years or fewer asked) and the must-haves match the facts.
+- stretch: the level fits but one core must-have is missing, or {years_plus} years asked.
+- poor: more than {years_plus} years required, senior scope, a PhD required, a specialist domain
+  the facts don't show, sponsorship ruled out, or not a software role.
+'''

@@ -1,0 +1,113 @@
+# What to look for and how to judge it. EXAMPLE PROFILE (a new-grad character animator).
+# The setup wizard writes yours to profile/search.toml; you can also edit it by hand.
+# Title patterns are regular expressions matched as whole words, ignoring case.
+
+[target]
+# Titles levelled above max_level are dropped ("Animator II" and up when it's 1).
+# level_nouns are the words a level number follows ("Animator 2", "3D Artist III").
+max_level = 1
+level_nouns = ["animator", "artist", "rigger", "designer"]
+# Postings asking more years than this are dropped (unless they also invite new grads).
+max_years_required = 1
+drop_manager_titles = true
+drop_lead_titles = true
+drop_phd_roles = true
+drop_contract_roles = false       # titles marked contract / contractor
+drop_apprenticeships = false      # apprentice / apprenticeship titles
+
+[titles]
+# A title must contain one of these to be considered.
+include = [
+    'animator',
+    'animation',
+    'rigger',
+    'rigging',
+    'previs',
+    'layout\s+artist',
+    'storyboard\w*',
+    'motion\s+design\w*',
+    'motion\s+graphics',
+    '3d\s+artist',
+    '2d\s+artist',
+    'cg\s+artist',
+    'character\s+artist',
+    'cinematics?',
+    'generalist',
+]
+# Not the kind of job wanted.
+not_target = [
+    'engineer\w*',
+    'developer',
+    'programmer',
+    'software',
+    'producer',
+    'recruit\w*',
+    'marketing',
+    'sales',
+    'finance',
+    'accountant',
+    'legal',
+    'counsel',
+    'data',
+    'analyst',
+    'teacher',
+    'instructor',
+    'professor',
+]
+# Specialist areas outside the background.
+outside_background = [
+    'lighting',
+    'lighter',
+    'compositor',
+    'compositing',
+    'matte\s+paint\w*',
+    'fx\s+(?:artist|td)',
+    'pipeline\s+td',
+    'texture\s+artist',
+    'groom\w*',
+]
+other_tracks = []
+
+[sources]
+# The SimplifyJobs New-Grad list only has tech roles: off for animation.
+simplify_new_grad = false
+simplify_categories = []
+
+# Location order for ranking: first is best. Remote and other US places rank after these.
+[[locations]]
+name = "Los Angeles"
+match = 'los angeles|\bla\b|burbank|glendale|santa monica|culver city|hollywood|pasadena|el segundo|irvine'
+
+[[locations]]
+name = "SF Bay Area"
+match = 'san francisco|bay area|emeryville|oakland|berkeley|san mateo|san jose|redwood city'
+
+[[locations]]
+name = "Seattle"
+match = 'seattle|bellevue|redmond|kirkland'
+
+[[locations]]
+name = "NYC"
+match = 'new york|\bnyc\b|brooklyn|manhattan'
+
+[fit]
+# What the fit check (Claude) weighs, in plain words. {years} and {years_plus} come from
+# max_years_required. Written about the candidate in the third person.
+guide = '''
+What Jamie is looking for: full-time US roles for a new-grad character animator: junior or
+entry animator (3D or 2D) at animation, VFX, games or commercial studios; animation
+apprenticeships and trainee programs count; motion design and previs roles that are mostly
+character work count too.
+
+Verdicts:
+- good: entry, junior, apprentice or level I, or {years} year(s) or fewer asked, and the work
+  is character animation in tools the facts show (Maya, Blender, Toon Boom Harmony, After Effects).
+- stretch: right level, but a main tool or specialty is missing (e.g. Houdini, Unreal
+  cinematics, heavy rigging), or it asks for {years_plus} years and everything else fits.
+- poor: senior, lead or supervisor scope; more than {years_plus} years required; feature-film
+  credits required; mainly lighting, compositing, FX or texturing; not an animation role;
+  or a US citizenship or clearance requirement the candidate doesn't meet.
+
+Reason examples: "junior 3D character animator, Maya, strong match", "needs Houdini FX
+experience", "asks 3+ years in feature animation".
+'''

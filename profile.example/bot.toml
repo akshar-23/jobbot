@@ -1,0 +1,27 @@
+# Application bot settings. The dashboard's To apply tab changes the first three for you.
+
+# Sites where the bot may click Submit. Until a site is listed, the bot only does dry runs
+# (fills the form, saves a screenshot, stops). Options: "greenhouse", "ashby", "lever".
+live_handlers = []
+# Start the bot as soon as you pick roles in the dashboard.
+auto_run_on_pick = false
+daily_limit = 30              # most applications submitted per day
+per_company_per_day = 2       # most per company per day
+
+# Required agreements on forms. false = that application comes to you ("Needs you").
+accept_privacy_notices = true         # "I acknowledge the Applicant Privacy Notice"
+accept_arbitration_agreements = false # gives up your right to sue in court; read before enabling
+accept_other_agreements = false       # anything else: terms, codes of conduct, certifications
+
+headless = true               # false shows the browser window while the bot works
+draft_effort = "medium"       # Claude effort for cover letters and answers: low | medium | high
+
+# Fit check: marks each new role good / stretch / poor against facts.md.
+fit_on_serve = true
+fit_model = "sonnet"
+fit_effort = "medium"
+
+# Words that must never appear in a drafted letter or answer (e.g. a show under NDA).
+forbidden_terms = []
+# Recorded in the tracker for applications the bot sends.
+resume_variant = "default"
