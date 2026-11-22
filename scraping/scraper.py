@@ -435,7 +435,7 @@ def fetch_smartrecruiters(http: HttpClient, company: str, slug: str) -> list[Pos
     return out
 
 
-def fetch_workday(http: HttpClient, company: str, career_url: str) -> list[Posting]:
+def fetch_workday(http: HttpClient, company: str, career_url: str, search: str = "") -> list[Posting]:
     """Use the public wday/cxs JSON endpoint on *.myworkdayjobs.com sites.
 
     Example:
@@ -456,7 +456,7 @@ def fetch_workday(http: HttpClient, company: str, career_url: str) -> list[Posti
     limit = 20
     today = date.today()
     while True:
-        body = {"limit": limit, "offset": offset, "searchText": "", "appliedFacets": {}}
+        body = {"limit": limit, "offset": offset, "searchText": search, "appliedFacets": {}}
         data = http.post_json(api, body)
         postings = data.get("jobPostings") or []
         for j in postings:
@@ -873,7 +873,8 @@ def scrape_entry(http: HttpClient, entry: dict) -> list[Posting]:
 
     if provider == "workday":
         career_url = entry.get("career_url") or ""
-        return fetch_workday(http, company, career_url)
+        # "search": a Workday search term, for boards bigger than the fetch cap (NVIDIA has 2,000+).
+        return fetch_workday(http, company, career_url, entry.get("search", ""))
 
     if provider == "custom":
         key = company.lower().split()[0]
@@ -998,13 +999,17 @@ def main() -> int:
             counts["errors"] += 1
             continue
 
-        complete = getattr(postings, "complete", True)
+        # Only a company's full list says which of its postings closed. An entry with a search
+        # term sees just part of the board, so it adds postings but never marks any closed.
+        complete = getattr(postings, "complete", True) and not entry.get("search")
         if complete:
-            open_by_company[company] = {h for h in map(url_hash, (p.jd_url for p in postings)) if h}
+            open_by_company.setdefault(company, set()).update(
+                h for h in map(url_hash, (p.jd_url for p in postings)) if h)
 
-        # companies.json only lists employers with a record of sponsoring H-1Bs.
+        # "sponsors": whether this employer is known to sponsor H-1Bs ("yes", the default, or
+        # "unclear" for companies added without a record checked).
         rows, c = screen_postings(
-            http, postings, known, sponsors="yes", provider=provider,
+            http, postings, known, sponsors=entry.get("sponsors", "yes"), provider=provider,
             career_url=entry.get("career_url", "") if provider == "workday" else "",
         )
         new_rows += rows
