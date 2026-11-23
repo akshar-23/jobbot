@@ -127,19 +127,22 @@ INTERN_BLOCKER = re.compile(r"\b(intern|interns|internships?|co-?op)\b", re.I)
 # Student titles are always dropped (people using this have graduated). Contract roles and
 # apprenticeships depend on the field: [target] drop_contract_roles / drop_apprenticeships.
 STUDENT_BLOCKER = re.compile(r"\bstudent\b", re.I)
-CONTRACT_BLOCKER = re.compile(r"\bcontractor\b|\(contract\)|\bcontract\s+(?:student|role|position)\b", re.I)
+# "Contractor", "(Contract)", "CONTRACT - Gameplay Engineer", "Gameplay Engineer - Contract".
+CONTRACT_BLOCKER = re.compile(
+    r"\bcontractor\b|\(contract\b|\bcontract\s+(?:student|role|position)\b|^\s*contract\b|[-–|,]\s*contract\s*$",
+    re.I)
 APPRENTICE_BLOCKER = re.compile(r"\bapprentice\w*\b", re.I)
 DEGREE_BLOCKER = re.compile(r"\b(ph\.?\s?d|postdoc\w*|post-?doctoral|postbaccalaureate)\b", re.I)
 # A country or region outside the US named in the title ("…, Korea", "- India").
 NON_US_TITLE_RE = re.compile(
     r"\b(india|korea|japan|china|taiwan|singapore|uk|united\s+kingdom|london|germany|"
     r"france|israel|canada|toronto|mexico|brazil|poland|ireland|netherlands|australia|"
-    r"europe|emea|apac|latam)\b",
+    r"europe|emea|apac|latam|middle\s+east|ksa|uae|saudi)\b",
     re.I,
 )
 
 SENIOR_BLOCKERS = re.compile(
-    r"\b(senior|sr\.?|staff|principal|distinguished|director|"
+    r"\b(senior|sr\.?|staff|principal|expert|distinguished|director|"
     r"head\s+of|vp|vice\s*president|chief)\b",
     re.I,
 )
@@ -226,6 +229,9 @@ NON_US_HINTS = [
     "montevideo", "edinburgh", "glasgow", "belfast", "luxembourg", "chennai", "delhi",
     "gurgaon", "gurugram", "noida", "kolkata", "ahmedabad", "osaka", "wroclaw", "haifa",
     "herzliya", "calgary", "edmonton", "waterloo, on", "pakistan", "bangladesh", "sri lanka",
+    # Added 2026-11-22 with the robotics and simulation boards.
+    "stuttgart", "frankfurt", "hamburg", "cologne", "düsseldorf", "dusseldorf", " ksa ", "ksa -",
+    "middle east", "sherbrooke",
 ]
 
 US_HINTS = [
@@ -506,6 +512,14 @@ def backfill_workday_description(http: HttpClient, career_url: str, posting: Pos
     desc_html = info.get("jobDescription") or ""
     posting.description = strip_html(desc_html)
     posting.posted = day_from_iso(info.get("startDate") or "") or posting.posted
+    # The list says only "2 Locations" for a job in several places; the detail names them,
+    # so the location filter can run again (London + Barcelona is not a US job).
+    if re.fullmatch(r"\d+\s+locations?", (posting.location or "").strip(), re.I):
+        places = [info.get("location") or ""] + list(info.get("additionalLocations") or [])
+        country = (info.get("country") or {}).get("descriptor") or ""
+        named = "; ".join(p for p in places if p)
+        if named:
+            posting.location = named + (f" ({country})" if country and country not in named else "")
 
 
 def fetch_amazon(http: HttpClient, company: str, career_url: str) -> list[Posting]:
@@ -645,10 +659,17 @@ def detect_salary(text: str) -> str:
     return f"${lo} - ${hi}"
 
 
+# Waymo and others post the ads US green-card (PERM) filings require, for people already on staff,
+# with a location like "PERM - N/A". They aren't openings.
+PERM_LOCATION_RE = re.compile(r"^\s*perm\b", re.I)
+
+
 def location_verdict(loc: str) -> tuple[str, str]:
-    """Return (verdict, reason). verdict in {us, nonus, unknown}."""
+    """Return (verdict, reason). verdict in {us, nonus, unknown}; "nonus" means drop."""
     if not loc:
         return "unknown", "no location"
+    if PERM_LOCATION_RE.match(loc):
+        return "nonus", "green-card (PERM) notice for a current employee, not an opening"
     lo = " " + loc.lower() + " "
     nonus_hit = any(h in lo for h in NON_US_HINTS)
     us_hit = any(h in lo for h in US_HINTS)

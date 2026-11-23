@@ -49,6 +49,22 @@ TITLES = [
     ("Data Scientist, FX Quantitative Research", "Stripe", False),
     ("Forward Deployed Engineer, Agentic Platform (Korea)", "Cohere", False),
     ("Customer Succes Engineer", "Adobe", False),
+    ("CONTRACT - Gameplay Software Engineer", "Nintendo", False),
+    ("Gameplay Programmer - Contract", "Studio", False),
+    ("Smart Contract Engineer", "Coinbase", True),
+    ("Expert Engineer, Security - Central Technology", "Activision", False),
+    ("Founding Developer Tooling Engineer - Middle East", "Applied Intuition", False),
+    ("Gameplay Engineer, Combat - STARCRAFT", "Blizzard Entertainment", True),
+]
+
+# (location, verdict)
+LOCATIONS = [
+    ("PERM - N/A", "nonus"),
+    ("Stuttgart", "nonus"),
+    ("KSA - RYD Garage", "nonus"),
+    ("London - King - Ampersand; Barcelona - King - PG (United Kingdom)", "nonus"),
+    ("Sunnyvale, CA", "us"),
+    ("Irvine, CA", "us"),
 ]
 
 # (job description text, minimum years required)
@@ -70,6 +86,11 @@ def main() -> int:
         if ok != want:
             failures += 1
             print(f"FAIL title {title!r}: got {'pass' if ok else 'drop'} ({why}), wanted {'pass' if want else 'drop'}")
+    for loc, want in LOCATIONS:
+        got = rules.location_verdict(loc)[0]
+        if got != want:
+            failures += 1
+            print(f"FAIL location {loc!r}: got {got}, wanted {want}")
     for text, want in YEARS:
         got = fit.min_years(text)
         if got != want:
@@ -97,7 +118,7 @@ def main() -> int:
         failures += 1
         print("FAIL junk-page check")
 
-    total = len(TITLES) + len(YEARS) + 5
+    total = len(TITLES) + len(LOCATIONS) + len(YEARS) + 5
     print(f"{total - failures}/{total} passed")
     return 1 if failures else 0
 
