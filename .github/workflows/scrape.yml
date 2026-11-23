@@ -31,11 +31,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # A copy that hasn't been set up yet (the template itself, or a fresh copy before the
+      # setup wizard's profile/ is pushed) has nothing to search for: skip the run.
+      - name: Check for a profile
+        id: profile
+        run: |
+          if [ -f profile/companies.json ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
+          else echo "No profile/companies.json yet: finish setup and push profile/, then this runs."; fi
+
       - name: Run scraper
+        if: steps.profile.outputs.ready == 'true'
         run: python scraping/scraper.py
 
       - name: Upload log as artifact
-        if: always()
+        if: always() && steps.profile.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: scrape-log-${{ github.run_id }}
@@ -46,6 +55,7 @@ jobs:
       # The scraper no longer edits tracker.csv; `python3 -m jobbot sync` imports
       # these files locally, so this commit never conflicts with tracker edits.
       - name: Commit new postings and open-jobs snapshot
+        if: steps.profile.outputs.ready == 'true'
         run: |
           git config user.name "scraper-bot"
           git config user.email "scraper-bot@users.noreply.github.com"

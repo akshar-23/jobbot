@@ -127,7 +127,12 @@ def template(target: str) -> int:
         return 1
     if not (out / ".git").exists():
         _run(["git", "init", "-b", "main"], cwd=out)
-    _run(["git", "add", "-A"], cwd=out)
+    # Stage the shared paths only: anything else in that folder (a tracker.csv from a test run,
+    # the nightly scrape's output) is not part of the template.
+    _run(["git", "add", "-A", "--", *[rel for rel in ENGINE_PATHS if (out / rel).exists()]], cwd=out)
+    gone = [rel for rel in ENGINE_PATHS if not (out / rel).exists()]
+    if gone:  # shared files deleted since the last export
+        _run(["git", "add", "-u", "--", *gone], cwd=out, check=False)
     changed = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=out).returncode != 0
     if changed:
         _run(["git", "commit", "-q", "-m", "Update jobbot from the development copy"], cwd=out)
